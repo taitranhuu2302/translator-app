@@ -1,56 +1,30 @@
-import axios, { AxiosInstance } from 'axios';
-import { TranslationRequest, TranslationResult } from '../../shared/types';
-import { TranslationProvider } from './translation-provider';
-
-const BASE_URL = 'https://deep-translator-api.azurewebsites.net';
-const TIMEOUT_MS = 10_000;
-
-interface ApiResponse {
-  translation?: string;
-  error?: string | null;
-}
+import { translate as googletrans } from "googletrans";
+import { TranslationRequest, TranslationResult } from "../../shared/types";
+import { TranslationProvider } from "./translation-provider";
 
 export class GoogleTranslateProvider implements TranslationProvider {
-  private readonly client: AxiosInstance;
-
-  constructor() {
-    this.client = axios.create({
-      baseURL: BASE_URL,
-      timeout: TIMEOUT_MS,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
   async translate(request: TranslationRequest): Promise<TranslationResult> {
-    let data: ApiResponse;
+    let result: Awaited<ReturnType<typeof googletrans>>;
 
     try {
-      const response = await this.client.post<ApiResponse>('/google/', {
-        source: request.source,
-        target: request.target,
-        text: request.text,
+      result = await googletrans(request.text, {
+        from: request.source === "auto" ? undefined : request.source,
+        to: request.target,
       });
-      data = response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-          throw new Error('TIMEOUT: Translation request timed out');
-        }
-        throw new Error(`NETWORK_ERROR: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.toLowerCase().includes("timeout")) {
+        throw new Error(`TIMEOUT: Translation request timed out`);
       }
-      throw new Error(`NETWORK_ERROR: ${String(error)}`);
+      throw new Error(`NETWORK_ERROR: ${msg}`);
     }
 
-    if (data.error) {
-      throw new Error(`API_ERROR: ${data.error}`);
-    }
-
-    if (typeof data.translation !== 'string') {
-      throw new Error('API_ERROR: Invalid response shape from translation API');
+    if (!result || typeof result.text !== "string") {
+      throw new Error("API_ERROR: Invalid response from googletrans");
     }
 
     return {
-      translation: data.translation,
+      translation: result.text,
       sourceText: request.text,
       source: request.source,
       target: request.target,

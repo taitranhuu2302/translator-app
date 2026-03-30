@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from "node:child_process";
 
 export interface NativeInputAdapter {
   simulateCopyShortcut(): Promise<void>;
@@ -13,7 +13,7 @@ export interface NativeInputAdapter {
 function execSyncErrorText(err: unknown): string {
   if (!(err instanceof Error)) return String(err);
   const any = err as Error & { stderr?: Buffer | string };
-  const stderr = any.stderr != null ? String(any.stderr) : '';
+  const stderr = any.stderr != null ? String(any.stderr) : "";
   return `${err.message}\n${stderr}`;
 }
 
@@ -21,7 +21,7 @@ export class ShellNativeInputAdapter implements NativeInputAdapter {
   async simulateCopyShortcut(): Promise<void> {
     const platform = process.platform;
 
-    if (platform === 'darwin') {
+    if (platform === "darwin") {
       try {
         execSync(
           `osascript -e 'tell application "System Events" to keystroke "c" using {command down}'`,
@@ -31,21 +31,34 @@ export class ShellNativeInputAdapter implements NativeInputAdapter {
         const text = execSyncErrorText(err);
         if (/not allowed to send keystrokes|\(1002\)/i.test(text)) {
           throw new Error(
-            'SELECTION_CAPTURE_FAILED: macOS blocked automated keyboard input (Accessibility). ' +
-              'Open System Settings → Privacy & Security → Accessibility, enable this app. ' +
-              'If you run via `npm start`, also enable Terminal or your IDE.',
+            "SELECTION_CAPTURE_FAILED: macOS blocked automated keyboard input (Accessibility). " +
+              "Open System Settings → Privacy & Security → Accessibility, enable this app. " +
+              "If you run via `npm start`, also enable Terminal or your IDE.",
           );
         }
         throw err;
       }
-    } else if (platform === 'win32') {
-      execSync(
-        `powershell -NoProfile -Command "$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys('^c')"`,
-        { timeout: 2000 },
+    } else if (platform === "win32") {
+      // Spawn powershell.exe directly — avoids the cmd.exe wrapper that execSync
+      // adds on Windows, cutting startup overhead and preventing ETIMEDOUT.
+      const result = spawnSync(
+        "powershell",
+        [
+          "-NoProfile",
+          "-NonInteractive",
+          "-Command",
+          '$wshell = New-Object -ComObject wscript.shell; $wshell.SendKeys("^c")',
+        ],
+        { timeout: 5000 },
       );
+      if (result.error) throw result.error;
+      if (result.status !== 0) {
+        const stderr = result.stderr?.toString().trim() || "";
+        throw new Error(stderr || "PowerShell SendKeys failed");
+      }
     } else {
       // Linux fallback via xdotool
-      execSync('xdotool key ctrl+c', { timeout: 2000 });
+      execSync("xdotool key ctrl+c", { timeout: 2000 });
     }
   }
 }
@@ -57,8 +70,8 @@ export class ShellNativeInputAdapter implements NativeInputAdapter {
 export class ManualFallbackNativeInputAdapter implements NativeInputAdapter {
   async simulateCopyShortcut(): Promise<void> {
     throw new Error(
-      'SELECTION_CAPTURE_FAILED: Automatic text capture is not available. ' +
-        'Please copy the text manually (Ctrl+C / Cmd+C) before pressing the quick translate shortcut.',
+      "SELECTION_CAPTURE_FAILED: Automatic text capture is not available. " +
+        "Please copy the text manually (Ctrl+C / Cmd+C) before pressing the quick translate shortcut.",
     );
   }
 }

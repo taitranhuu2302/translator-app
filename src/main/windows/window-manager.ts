@@ -1,8 +1,8 @@
-import { app, BrowserWindow, screen, shell } from 'electron';
-import { suppressMainOnActivateFor } from '../activate-guard';
-import { isAppQuitting } from '../app-quit-state';
-import fs from 'node:fs';
-import path from 'node:path';
+import { app, BrowserWindow, screen, shell } from "electron";
+import { suppressMainOnActivateFor } from "../activate-guard";
+import { isAppQuitting } from "../app-quit-state";
+import fs from "node:fs";
+import path from "node:path";
 
 // Injected by Electron Forge VitePlugin
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
@@ -12,8 +12,8 @@ declare const QUICK_WINDOW_VITE_NAME: string;
 
 /** Preload output is `.vite/build/preload.js`; `__dirname` is usually that folder but can be `.vite` in some runs. */
 function resolvePreloadPath(): string {
-  const sameDir = path.join(__dirname, 'preload.js');
-  const underBuild = path.join(__dirname, 'build', 'preload.js');
+  const sameDir = path.join(__dirname, "preload.js");
+  const underBuild = path.join(__dirname, "build", "preload.js");
   if (fs.existsSync(sameDir)) return sameDir;
   if (fs.existsSync(underBuild)) return underBuild;
   return sameDir;
@@ -65,8 +65,9 @@ class WindowManager {
       ...MAIN_WINDOW_SIZE,
       minWidth: 600,
       minHeight: 480,
-      title: 'NextG Translate',
+      title: "NextG Translate",
       show: false,
+      autoHideMenuBar: true,
       webPreferences: {
         preload: PRELOAD_PATH,
         contextIsolation: true,
@@ -76,9 +77,11 @@ class WindowManager {
       },
     });
 
+    this.mainWindow.setMenu(null);
+
     this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       shell.openExternal(url);
-      return { action: 'deny' };
+      return { action: "deny" };
     });
 
     if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -89,7 +92,7 @@ class WindowManager {
       );
     }
 
-    this.mainWindow.once('ready-to-show', () => {
+    this.mainWindow.once("ready-to-show", () => {
       this.mainWindow?.show();
       if (isDev) {
         this.mainWindow?.webContents.openDevTools();
@@ -99,7 +102,7 @@ class WindowManager {
     // Hide instead of destroying so shortcuts / Dock / second-instance can show again.
     // (Menu bar tray is only used on Windows/Linux; see tray-manager.)
     // Minimize does not fire `close` — only closing the window hides quick too.
-    this.mainWindow.on('close', (e) => {
+    this.mainWindow.on("close", (e) => {
       if (isAppQuitting()) {
         return;
       }
@@ -136,26 +139,31 @@ class WindowManager {
       },
     });
 
-    this.quickWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    this.quickWindow.webContents.setWindowOpenHandler(() => ({
+      action: "deny",
+    }));
 
     // Dev server URL is the host root (`/`) — that serves `index.html` (main app). Quick UI lives in `index-quick.html`.
     if (QUICK_WINDOW_VITE_DEV_SERVER_URL) {
-      const base = QUICK_WINDOW_VITE_DEV_SERVER_URL.replace(/\/$/, '');
+      const base = QUICK_WINDOW_VITE_DEV_SERVER_URL.replace(/\/$/, "");
       this.quickWindow.loadURL(`${base}/index-quick.html`);
     } else {
       this.quickWindow.loadFile(
-        path.join(__dirname, `../renderer/${QUICK_WINDOW_VITE_NAME}/index-quick.html`),
+        path.join(
+          __dirname,
+          `../renderer/${QUICK_WINDOW_VITE_NAME}/index-quick.html`,
+        ),
       );
     }
 
-    this.quickWindow.on('blur', () => {
+    this.quickWindow.on("blur", () => {
       suppressMainOnActivateFor(1500);
       this.hideQuick({ suppressMainFocus: true });
     });
 
     if (isDev) {
-      this.quickWindow.webContents.once('did-finish-load', () => {
-        this.quickWindow?.webContents.openDevTools({ mode: 'detach' });
+      this.quickWindow.webContents.once("did-finish-load", () => {
+        this.quickWindow?.webContents.openDevTools({ mode: "detach" });
       });
     }
 

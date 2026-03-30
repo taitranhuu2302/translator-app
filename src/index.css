@@ -122,4 +122,25 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Hide scrollbar track by default; show subtle thumb on hover */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+  }
+  *:hover > ::-webkit-scrollbar-thumb,
+  *:focus-within > ::-webkit-scrollbar-thumb {
+    background: oklch(0.708 0 0 / 40%);
+  }
+  .dark *:hover > ::-webkit-scrollbar-thumb,
+  .dark *:focus-within > ::-webkit-scrollbar-thumb {
+    background: oklch(1 0 0 / 20%);
+  }
 }

@@ -1,65 +1,86 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockPost = vi.fn();
-const mockIsAxiosError = vi.fn(() => false);
+const mockTranslate = vi.fn();
 
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({ post: mockPost })),
-    isAxiosError: mockIsAxiosError,
-  },
-  isAxiosError: mockIsAxiosError,
+vi.mock("googletrans", () => ({
+  translate: mockTranslate,
 }));
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockIsAxiosError.mockReturnValue(false);
 });
 
-describe('GoogleTranslateProvider', () => {
-  it('returns a TranslationResult on success', async () => {
-    mockPost.mockResolvedValue({ data: { translation: 'Hello', error: null } });
-    const { GoogleTranslateProvider } = await import('../main/translation/google-translate-provider');
+describe("GoogleTranslateProvider", () => {
+  it("returns a TranslationResult on success", async () => {
+    mockTranslate.mockResolvedValue({ text: "Hello" });
+    const { GoogleTranslateProvider } =
+      await import("../main/translation/google-translate-provider");
     const provider = new GoogleTranslateProvider();
-    const result = await provider.translate({ source: 'vi', target: 'en', text: 'Xin chào' });
-    expect(result.translation).toBe('Hello');
-    expect(result.sourceText).toBe('Xin chào');
-    expect(result.target).toBe('en');
+    const result = await provider.translate({
+      source: "vi",
+      target: "en",
+      text: "Xin chào",
+    });
+    expect(result.translation).toBe("Hello");
+    expect(result.sourceText).toBe("Xin chào");
+    expect(result.target).toBe("en");
   });
 
-  it('throws API_ERROR when response has error field', async () => {
-    mockPost.mockResolvedValue({ data: { translation: null, error: 'Unsupported language' } });
-    const { GoogleTranslateProvider } = await import('../main/translation/google-translate-provider');
+  it("passes correct options to googletrans", async () => {
+    mockTranslate.mockResolvedValue({ text: "Hello" });
+    const { GoogleTranslateProvider } =
+      await import("../main/translation/google-translate-provider");
     const provider = new GoogleTranslateProvider();
-    await expect(provider.translate({ source: 'vi', target: 'en', text: 'test' }))
-      .rejects.toThrow('API_ERROR');
+    await provider.translate({ source: "vi", target: "en", text: "Xin chào" });
+    expect(mockTranslate).toHaveBeenCalledWith("Xin chào", {
+      from: "vi",
+      to: "en",
+    });
   });
 
-  it('throws API_ERROR when translation field is missing', async () => {
-    mockPost.mockResolvedValue({ data: {} });
-    const { GoogleTranslateProvider } = await import('../main/translation/google-translate-provider');
+  it("passes undefined as from when source is auto", async () => {
+    mockTranslate.mockResolvedValue({ text: "Hello" });
+    const { GoogleTranslateProvider } =
+      await import("../main/translation/google-translate-provider");
     const provider = new GoogleTranslateProvider();
-    await expect(provider.translate({ source: 'vi', target: 'en', text: 'test' }))
-      .rejects.toThrow('API_ERROR');
+    await provider.translate({
+      source: "auto",
+      target: "en",
+      text: "Xin chào",
+    });
+    expect(mockTranslate).toHaveBeenCalledWith("Xin chào", {
+      from: undefined,
+      to: "en",
+    });
   });
 
-  it('throws TIMEOUT on axios timeout', async () => {
-    const timeoutError = Object.assign(new Error('timeout of 10000ms exceeded'), { code: 'ECONNABORTED' });
-    mockIsAxiosError.mockReturnValue(true);
-    mockPost.mockRejectedValue(timeoutError);
-    const { GoogleTranslateProvider } = await import('../main/translation/google-translate-provider');
+  it("throws API_ERROR when result has no text field", async () => {
+    mockTranslate.mockResolvedValue({});
+    const { GoogleTranslateProvider } =
+      await import("../main/translation/google-translate-provider");
     const provider = new GoogleTranslateProvider();
-    await expect(provider.translate({ source: 'vi', target: 'en', text: 'test' }))
-      .rejects.toThrow('TIMEOUT');
+    await expect(
+      provider.translate({ source: "vi", target: "en", text: "test" }),
+    ).rejects.toThrow("API_ERROR");
   });
 
-  it('throws NETWORK_ERROR on generic axios error', async () => {
-    const netError = new Error('Network Error');
-    mockIsAxiosError.mockReturnValue(true);
-    mockPost.mockRejectedValue(netError);
-    const { GoogleTranslateProvider } = await import('../main/translation/google-translate-provider');
+  it("throws TIMEOUT when error message contains timeout", async () => {
+    mockTranslate.mockRejectedValue(new Error("Request timeout exceeded"));
+    const { GoogleTranslateProvider } =
+      await import("../main/translation/google-translate-provider");
     const provider = new GoogleTranslateProvider();
-    await expect(provider.translate({ source: 'vi', target: 'en', text: 'test' }))
-      .rejects.toThrow('NETWORK_ERROR');
+    await expect(
+      provider.translate({ source: "vi", target: "en", text: "test" }),
+    ).rejects.toThrow("TIMEOUT");
+  });
+
+  it("throws NETWORK_ERROR on generic error", async () => {
+    mockTranslate.mockRejectedValue(new Error("Network Error"));
+    const { GoogleTranslateProvider } =
+      await import("../main/translation/google-translate-provider");
+    const provider = new GoogleTranslateProvider();
+    await expect(
+      provider.translate({ source: "vi", target: "en", text: "test" }),
+    ).rejects.toThrow("NETWORK_ERROR");
   });
 });
