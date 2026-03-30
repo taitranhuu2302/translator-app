@@ -1,23 +1,44 @@
-import React from 'react';
-import { RotateCcw } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Switch } from '../../../components/ui/switch';
-import { Separator } from '../../../components/ui/separator';
-import { Skeleton } from '../../../components/ui/skeleton';
-import { Alert, AlertDescription } from '../../../components/ui/alert';
-import { Kbd, KbdGroup } from '../../../components/ui/kbd';
-import { ShortcutInput } from './shortcut-input';
-import { useSettings, useUpdateSettings, useResetShortcuts } from './use-settings';
-import type { ManualDirection, LanguageCode } from '../../../shared/types';
-import { bridge } from '../../lib/bridge';
+import React from "react";
+import { RotateCcw } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
+import { Switch } from "../../../components/ui/switch";
+import { Separator } from "../../../components/ui/separator";
+import { Skeleton } from "../../../components/ui/skeleton";
+import { Alert, AlertDescription } from "../../../components/ui/alert";
+import { Kbd, KbdGroup } from "../../../components/ui/kbd";
+import { ShortcutInput } from "./shortcut-input";
+import {
+  useSettings,
+  useUpdateSettings,
+  useResetShortcuts,
+} from "./use-settings";
+import type { ManualDirection, LanguageCode } from "../../../shared/types";
+import { bridge } from "../../lib/bridge";
+import { formatAcceleratorParts } from "../../lib/format-shortcut";
 
-function SettingRow({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
+function SettingRow({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex flex-col gap-0.5 flex-1">
         <span className="text-sm font-medium">{label}</span>
-        {description && <span className="text-xs text-muted-foreground">{description}</span>}
+        {description && (
+          <span className="text-xs text-muted-foreground">{description}</span>
+        )}
       </div>
       {children}
     </div>
@@ -27,7 +48,8 @@ function SettingRow({ label, description, children }: { label: string; descripti
 export function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const { mutate: update } = useUpdateSettings();
-  const { mutate: resetShortcuts, isPending: isResetting } = useResetShortcuts();
+  const { mutate: resetShortcuts, isPending: isResetting } =
+    useResetShortcuts();
 
   if (isLoading || !settings) {
     return (
@@ -41,27 +63,39 @@ export function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 overflow-y-auto">
-
       {/* Translation defaults */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Translation Defaults</CardTitle>
-          <CardDescription>Default language directions for translate operations</CardDescription>
+          <CardDescription>
+            Default language directions for translate operations
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <SettingRow label="Manual direction" description="Default direction in the main translate view">
+          <SettingRow
+            label="Manual direction"
+            description="Default direction in the main translate view"
+          >
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                variant={settings.manualDirection === 'vi-en' ? 'default' : 'outline'}
-                onClick={() => update({ manualDirection: 'vi-en' as ManualDirection })}
+                variant={
+                  settings.manualDirection === "vi-en" ? "default" : "outline"
+                }
+                onClick={() =>
+                  update({ manualDirection: "vi-en" as ManualDirection })
+                }
               >
                 VI → EN
               </Button>
               <Button
                 size="sm"
-                variant={settings.manualDirection === 'en-vi' ? 'default' : 'outline'}
-                onClick={() => update({ manualDirection: 'en-vi' as ManualDirection })}
+                variant={
+                  settings.manualDirection === "en-vi" ? "default" : "outline"
+                }
+                onClick={() =>
+                  update({ manualDirection: "en-vi" as ManualDirection })
+                }
               >
                 EN → VI
               </Button>
@@ -70,19 +104,30 @@ export function SettingsPage() {
 
           <Separator />
 
-          <SettingRow label="NextG Translate target" description="Target language when using the global shortcut">
+          <SettingRow
+            label="NextG Translate target"
+            description="Target language when using the global shortcut"
+          >
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                variant={settings.quickTargetLanguage === 'en' ? 'default' : 'outline'}
-                onClick={() => update({ quickTargetLanguage: 'en' as LanguageCode })}
+                variant={
+                  settings.quickTargetLanguage === "en" ? "default" : "outline"
+                }
+                onClick={() =>
+                  update({ quickTargetLanguage: "en" as LanguageCode })
+                }
               >
                 English
               </Button>
               <Button
                 size="sm"
-                variant={settings.quickTargetLanguage === 'vi' ? 'default' : 'outline'}
-                onClick={() => update({ quickTargetLanguage: 'vi' as LanguageCode })}
+                variant={
+                  settings.quickTargetLanguage === "vi" ? "default" : "outline"
+                }
+                onClick={() =>
+                  update({ quickTargetLanguage: "vi" as LanguageCode })
+                }
               >
                 Vietnamese
               </Button>
@@ -93,18 +138,23 @@ export function SettingsPage() {
 
       {/* Shortcuts */}
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
+        <div className="flex justify-between w-full items-center px-4">
           <div className="space-y-1.5">
             <CardTitle className="text-base">Keyboard Shortcuts</CardTitle>
             <CardDescription>Global shortcuts for app actions</CardDescription>
             <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-1 gap-y-1 leading-relaxed">
               <span className="text-muted-foreground/90">Format:</span>
               <KbdGroup className="flex-wrap">
-                <Kbd className="font-mono text-[10px]">CommandOrControl</Kbd>
-                <span className="text-muted-foreground/70">+</span>
-                <Kbd className="font-mono text-[10px]">Alt</Kbd>
-                <span className="text-muted-foreground/70">+</span>
-                <Kbd className="font-mono text-[10px]">Key</Kbd>
+                {formatAcceleratorParts("CommandOrControl+Alt+T").map(
+                  (p, i) => (
+                    <React.Fragment key={i}>
+                      {i > 0 && (
+                        <span className="text-muted-foreground/70">+</span>
+                      )}
+                      <Kbd className="font-mono text-[10px]">{p}</Kbd>
+                    </React.Fragment>
+                  ),
+                )}
               </KbdGroup>
             </div>
           </div>
@@ -117,7 +167,7 @@ export function SettingsPage() {
             <RotateCcw data-icon="inline-start" />
             Reset to defaults
           </Button>
-        </CardHeader>
+        </div>
         <CardContent className="flex flex-col gap-4">
           <ShortcutInput
             label="NextG Translate"
@@ -131,11 +181,12 @@ export function SettingsPage() {
             currentValue={settings.toggleAppShortcut}
           />
 
-          {bridge.runtime.platform === 'darwin' && (
+          {bridge.runtime.platform === "darwin" && (
             <Alert>
               <AlertDescription className="text-xs">
-                On macOS, some key combinations may not work with non-QWERTY keyboard layouts.
-                If a shortcut fails to register, try a different combination.
+                On macOS, some key combinations may not work with non-QWERTY
+                keyboard layouts. If a shortcut fails to register, try a
+                different combination.
               </AlertDescription>
             </Alert>
           )}
@@ -158,14 +209,19 @@ export function SettingsPage() {
               max={600}
               step={50}
               value={settings.autoCopyDelayMs}
-              onChange={(e) => update({ autoCopyDelayMs: parseInt(e.target.value) })}
+              onChange={(e) =>
+                update({ autoCopyDelayMs: parseInt(e.target.value) })
+              }
               className="w-32"
             />
           </SettingRow>
 
           <Separator />
 
-          <SettingRow label="Restore clipboard" description="Restore clipboard contents after capturing selected text">
+          <SettingRow
+            label="Restore clipboard"
+            description="Restore clipboard contents after capturing selected text"
+          >
             <Switch
               checked={settings.restoreClipboard}
               onCheckedChange={(v) => update({ restoreClipboard: v })}
@@ -174,17 +230,23 @@ export function SettingsPage() {
 
           <Separator />
 
-          <SettingRow label="Popup always on top" description="Keep the quick translate popup above all other windows">
+          <SettingRow
+            label="Popup always on top"
+            description="Keep the quick translate popup above all other windows"
+          >
             <Switch
               checked={settings.popupAlwaysOnTop}
               onCheckedChange={(v) => update({ popupAlwaysOnTop: v })}
             />
           </SettingRow>
 
-          {bridge.runtime.platform !== 'darwin' && (
+          {bridge.runtime.platform !== "darwin" && (
             <>
               <Separator />
-              <SettingRow label="Start minimized to tray" description="Hide the app window on startup">
+              <SettingRow
+                label="Start minimized to tray"
+                description="Hide the app window on startup"
+              >
                 <Switch
                   checked={settings.startMinimized}
                   onCheckedChange={(v) => update({ startMinimized: v })}
@@ -194,7 +256,6 @@ export function SettingsPage() {
           )}
         </CardContent>
       </Card>
-
     </div>
   );
 }

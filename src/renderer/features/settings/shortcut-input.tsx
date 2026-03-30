@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
-import { Check, X, Loader2 } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Kbd } from '../../../components/ui/kbd';
-import { useValidateShortcut, useUpdateShortcut } from './use-settings';
-import { isErr } from '../../../shared/types';
-
+import React, { useState } from "react";
+import { Check, X, Loader2 } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Kbd, KbdGroup } from "../../../components/ui/kbd";
+import { useValidateShortcut, useUpdateShortcut } from "./use-settings";
+import { isErr } from "../../../shared/types";
+import { formatAcceleratorParts } from "../../lib/format-shortcut";
+import { bridge } from "../../lib/bridge";
 interface ShortcutInputProps {
   label: string;
-  settingKey: 'quickTranslateShortcut' | 'toggleAppShortcut';
+  settingKey: "quickTranslateShortcut" | "toggleAppShortcut";
   currentValue: string;
 }
 
-export function ShortcutInput({ label, settingKey, currentValue }: ShortcutInputProps) {
+export function ShortcutInput({
+  label,
+  settingKey,
+  currentValue,
+}: ShortcutInputProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(currentValue);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -46,8 +51,8 @@ export function ShortcutInput({ label, settingKey, currentValue }: ShortcutInput
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') handleCancel();
+    if (e.key === "Enter") handleSave();
+    if (e.key === "Escape") handleCancel();
   }
 
   const isPending = isValidating || isSaving;
@@ -67,12 +72,32 @@ export function ShortcutInput({ label, settingKey, currentValue }: ShortcutInput
               }}
               onKeyDown={handleKeyDown}
               className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm font-mono shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder="e.g. CommandOrControl+Alt+T"
+              placeholder={
+                bridge.runtime.platform === "darwin"
+                  ? "e.g. Cmd+Alt+T"
+                  : "e.g. Ctrl+Alt+T"
+              }
             />
-            <Button size="icon" variant="ghost" onClick={handleSave} disabled={isPending} title="Save">
-              {isPending ? <Loader2 className="animate-spin size-4" /> : <Check className="size-4" />}
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleSave}
+              disabled={isPending}
+              title="Save"
+            >
+              {isPending ? (
+                <Loader2 className="animate-spin size-4" />
+              ) : (
+                <Check className="size-4" />
+              )}
             </Button>
-            <Button size="icon" variant="ghost" onClick={handleCancel} disabled={isPending} title="Cancel">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={isPending}
+              title="Cancel"
+            >
               <X className="size-4" />
             </Button>
           </div>
@@ -82,10 +107,31 @@ export function ShortcutInput({ label, settingKey, currentValue }: ShortcutInput
         </div>
       ) : (
         <div className="flex items-center gap-2 min-w-0">
-          <Kbd className="flex-1 min-h-9 h-auto min-w-0 w-full justify-start px-2.5 py-1.5 font-mono text-xs leading-snug [overflow-wrap:anywhere] pointer-events-auto select-all">
-            {currentValue}
-          </Kbd>
-          <Button size="sm" variant="outline" onClick={() => { setDraft(currentValue); setEditing(true); }}>
+          <KbdGroup className="flex-1 min-h-9 h-auto min-w-0 w-full flex-wrap gap-1 px-2.5 py-1.5 rounded-md border border-input bg-muted/40">
+            {formatAcceleratorParts(currentValue).map((part, i) => (
+              <React.Fragment key={i}>
+                <Kbd key={i} className="font-mono text-xs">
+                  {part}
+                </Kbd>
+                {i !== currentValue.split("+").length - 1 && (
+                  <span
+                    key={`plus-${i}`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    +
+                  </span>
+                )}
+              </React.Fragment>
+            ))}
+          </KbdGroup>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setDraft(currentValue);
+              setEditing(true);
+            }}
+          >
             Change
           </Button>
         </div>

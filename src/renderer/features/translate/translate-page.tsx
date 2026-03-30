@@ -1,34 +1,44 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowLeftRight, Copy, Languages, Loader2 } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { Textarea } from '../../../components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Separator } from '../../../components/ui/separator';
-import { Kbd, KbdGroup } from '../../../components/ui/kbd';
-import { cn } from '../../../lib/utils';
-import { useTranslate } from './use-translate';
-import { useSettings } from '../settings/use-settings';
-import { showError } from '../../lib/toast';
-import { bridge } from '../../lib/bridge';
-import type { ManualDirection, TranslateSource } from '../../../shared/types';
-import { isOk, isErr } from '../../../shared/types';
+import React, { useCallback, useEffect, useState } from "react";
+import { ArrowLeftRight, Copy, Languages, Loader2 } from "lucide-react";
+import { useHotkeys } from "@tanstack/react-hotkeys";
+import { Button } from "../../../components/ui/button";
+import { Textarea } from "../../../components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../../components/ui/card";
+import { Separator } from "../../../components/ui/separator";
+import { Kbd, KbdGroup } from "../../../components/ui/kbd";
+import { cn } from "../../../lib/utils";
+import { useTranslate } from "./use-translate";
+import { useSettings } from "../settings/use-settings";
+import { showError } from "../../lib/toast";
+import { bridge } from "../../lib/bridge";
+import { formatAcceleratorParts } from "../../lib/format-shortcut";
+import type { ManualDirection, TranslateSource } from "../../../shared/types";
+import { isOk, isErr } from "../../../shared/types";
 
-function directionLabel(dir: ManualDirection): { source: string; target: string } {
-  return dir === 'vi-en'
-    ? { source: 'Vietnamese', target: 'English' }
-    : { source: 'English', target: 'Vietnamese' };
+function directionLabel(dir: ManualDirection): {
+  source: string;
+  target: string;
+} {
+  return dir === "vi-en"
+    ? { source: "Vietnamese", target: "English" }
+    : { source: "English", target: "Vietnamese" };
 }
 
-const swapHotkeyHint =
-  bridge.runtime.platform === 'darwin' ? '⌘⇧S' : 'Ctrl+Shift+S';
+const swapHotkeyParts = formatAcceleratorParts("CommandOrControl+Shift+S");
+const swapHotkeyTitle = swapHotkeyParts.join("+");
 
 export function TranslatePage() {
   const { data: settings } = useSettings();
   const [direction, setDirection] = useState<ManualDirection>(
-    settings?.manualDirection ?? 'vi-en',
+    settings?.manualDirection ?? "vi-en",
   );
-  const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
   const [showCopiedTip, setShowCopiedTip] = useState(false);
 
   const { mutateAsync: translate, isPending } = useTranslate();
@@ -37,12 +47,12 @@ export function TranslatePage() {
 
   async function handleTranslate() {
     if (!input.trim()) {
-      showError('Please enter some text to translate');
+      showError("Please enter some text to translate");
       return;
     }
     const result = await translate({
-      source: (direction === 'vi-en' ? 'vi' : 'en') as TranslateSource,
-      target: direction === 'vi-en' ? 'en' : 'vi',
+      source: (direction === "vi-en" ? "vi" : "en") as TranslateSource,
+      target: direction === "vi-en" ? "en" : "vi",
       text: input,
     });
     if (isOk(result)) {
@@ -53,24 +63,15 @@ export function TranslatePage() {
   }
 
   const handleSwap = useCallback(() => {
-    setDirection((d) => (d === 'vi-en' ? 'en-vi' : 'vi-en'));
-    setOutput('');
+    setDirection((d) => (d === "vi-en" ? "en-vi" : "vi-en"));
+    setOutput("");
   }, []);
 
   useEffect(() => {
     setShowCopiedTip(false);
   }, [output]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
-      if (e.key.toLowerCase() !== 's') return;
-      e.preventDefault();
-      handleSwap();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [handleSwap]);
+  useHotkeys([{ hotkey: "Mod+Shift+S", callback: () => handleSwap() }]);
 
   function handleCopy() {
     if (!output) return;
@@ -79,12 +80,12 @@ export function TranslatePage() {
         setShowCopiedTip(true);
         window.setTimeout(() => setShowCopiedTip(false), 1500);
       },
-      () => showError('Could not copy to clipboard'),
+      () => showError("Could not copy to clipboard"),
     );
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       void handleTranslate();
     }
@@ -101,7 +102,9 @@ export function TranslatePage() {
               <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
                 From
               </p>
-              <p className="truncate text-xs font-semibold leading-tight">{labels.source}</p>
+              <p className="truncate text-xs font-semibold leading-tight">
+                {labels.source}
+              </p>
             </div>
             <Button
               type="button"
@@ -109,7 +112,7 @@ export function TranslatePage() {
               size="icon"
               className="size-8 shrink-0 rounded-full"
               onClick={handleSwap}
-              title={`Swap languages (${swapHotkeyHint})`}
+              title={`Swap languages (${swapHotkeyTitle})`}
             >
               <ArrowLeftRight className="size-3.5" />
             </Button>
@@ -117,13 +120,22 @@ export function TranslatePage() {
               <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
                 To
               </p>
-              <p className="truncate text-xs font-semibold leading-tight">{labels.target}</p>
+              <p className="truncate text-xs font-semibold leading-tight">
+                {labels.target}
+              </p>
             </div>
           </div>
 
           <p className="flex flex-wrap items-center justify-center gap-1 text-[10px] text-muted-foreground">
             <span>Quick swap</span>
-            <Kbd className="font-mono text-[10px]">{swapHotkeyHint}</Kbd>
+            <KbdGroup>
+              {swapHotkeyParts.map((p, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <span className="text-muted-foreground/70">+</span>}
+                  <Kbd className="font-mono text-[10px]">{p}</Kbd>
+                </React.Fragment>
+              ))}
+            </KbdGroup>
           </p>
 
           <Card className="gap-0 py-0 shadow-sm">
@@ -145,13 +157,20 @@ export function TranslatePage() {
                   <span>{input.length} chars</span>
                   <span className="text-muted-foreground/60">·</span>
                   <KbdGroup className="inline-flex flex-wrap">
-                    <Kbd className="font-mono text-[9px]">{swapHotkeyHint}</Kbd>
+                    {swapHotkeyParts.map((p, i) => (
+                      <React.Fragment key={i}>
+                        {i > 0 && (
+                          <span className="text-muted-foreground/70">+</span>
+                        )}
+                        <Kbd className="font-mono text-[9px]">{p}</Kbd>
+                      </React.Fragment>
+                    ))}
                   </KbdGroup>
                   <span>swap</span>
                   <span className="text-muted-foreground/60">·</span>
                   <KbdGroup>
                     <Kbd className="text-[9px]">
-                      {bridge.runtime.platform === 'darwin' ? '⌘' : 'Ctrl'}
+                      {bridge.runtime.platform === "darwin" ? "⌘" : "Ctrl"}
                     </Kbd>
                     <span className="text-muted-foreground/70">+</span>
                     <Kbd className="text-[9px]">Enter</Kbd>
@@ -164,11 +183,14 @@ export function TranslatePage() {
                   disabled={isPending || !input.trim()}
                 >
                   {isPending ? (
-                    <Loader2 data-icon="inline-start" className="animate-spin" />
+                    <Loader2
+                      data-icon="inline-start"
+                      className="animate-spin"
+                    />
                   ) : (
                     <Languages data-icon="inline-start" />
                   )}
-                  {isPending ? '…' : 'Translate'}
+                  {isPending ? "…" : "Translate"}
                 </Button>
               </div>
             </CardContent>
@@ -190,8 +212,8 @@ export function TranslatePage() {
                   placeholder="Translation appears here…"
                   disabled={isPending}
                   className={cn(
-                    'min-h-[72px] max-h-[min(28vh,180px)] resize-y font-mono text-xs leading-relaxed bg-muted/30',
-                    isPending && 'text-muted-foreground/40',
+                    "min-h-[72px] max-h-[min(28vh,180px)] resize-y font-mono text-xs leading-relaxed bg-muted/30",
+                    isPending && "text-muted-foreground/40",
                   )}
                 />
                 {isPending && (

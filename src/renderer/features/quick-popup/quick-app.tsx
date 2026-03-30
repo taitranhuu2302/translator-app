@@ -1,31 +1,34 @@
-import React, { useEffect, useState } from 'react';
-import { Copy, X, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { bridge } from '../../lib/bridge';
-import { showError } from '../../lib/toast';
-import { useQuickClose } from './use-quick-popup';
-import type { QuickTranslatePayload } from '../../../shared/types';
+import React, { useEffect, useState } from "react";
+import { Copy, X, Loader2, AlertCircle } from "lucide-react";
+import { useHotkeys } from "@tanstack/react-hotkeys";
+import { Button } from "../../../components/ui/button";
+import { bridge } from "../../lib/bridge";
+import { showError } from "../../lib/toast";
+import { useQuickClose } from "./use-quick-popup";
+import type { QuickTranslatePayload } from "../../../shared/types";
 
 type State =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'result'; payload: QuickTranslatePayload }
-  | { status: 'error'; message: string };
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "result"; payload: QuickTranslatePayload }
+  | { status: "error"; message: string };
 
 export function QuickApp() {
-  const [state, setState] = useState<State>({ status: 'idle' });
+  const [state, setState] = useState<State>({ status: "idle" });
   const [showCopiedTip, setShowCopiedTip] = useState(false);
   const { mutate: close } = useQuickClose();
 
+  useHotkeys([{ hotkey: "Escape", callback: () => handleClose() }]);
+
   useEffect(() => {
     const unsubLoading = bridge.quick.onLoading(() => {
-      setState({ status: 'loading' });
+      setState({ status: "loading" });
     });
     const unsubShow = bridge.quick.onShow((payload) => {
-      setState({ status: 'result', payload });
+      setState({ status: "result", payload });
     });
     const unsubError = bridge.quick.onError((message) => {
-      setState({ status: 'error', message });
+      setState({ status: "error", message });
     });
     return () => {
       unsubLoading();
@@ -35,27 +38,27 @@ export function QuickApp() {
   }, []);
 
   useEffect(() => {
-    if (state.status !== 'result') setShowCopiedTip(false);
+    if (state.status !== "result") setShowCopiedTip(false);
   }, [state.status]);
 
   function handleCopy() {
-    if (state.status !== 'result') return;
+    if (state.status !== "result") return;
     void navigator.clipboard.writeText(state.payload.translated).then(
       () => {
         setShowCopiedTip(true);
         window.setTimeout(() => setShowCopiedTip(false), 1500);
       },
-      () => showError('Could not copy to clipboard'),
+      () => showError("Could not copy to clipboard"),
     );
   }
 
   function handleClose() {
     close();
-    setState({ status: 'idle' });
+    setState({ status: "idle" });
   }
 
-  const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties;
-  const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
+  const dragStyle = { WebkitAppRegion: "drag" } as React.CSSProperties;
+  const noDragStyle = { WebkitAppRegion: "no-drag" } as React.CSSProperties;
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-background text-foreground select-none overflow-hidden">
@@ -83,35 +86,38 @@ export function QuickApp() {
         className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 pb-2 pt-2"
         style={noDragStyle}
       >
-        {state.status === 'idle' && (
+        {state.status === "idle" && (
           <div className="flex flex-1 items-center justify-center px-1 text-center text-[11px] leading-relaxed text-muted-foreground">
-            Select text in another app, then press the NextG Translate shortcut. Nothing to type here—only the
-            translation appears after.
+            Select text in another app, then press the NextG Translate shortcut.
+            Nothing to type here—only the translation appears after.
           </div>
         )}
 
-        {state.status === 'loading' && (
+        {state.status === "loading" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="size-5 animate-spin text-primary" />
             <span className="text-xs">Translating…</span>
           </div>
         )}
 
-        {state.status === 'error' && (
+        {state.status === "error" && (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 overflow-y-auto py-1 text-center">
             <AlertCircle className="size-6 shrink-0 text-destructive" />
-            <p className="px-1 text-xs leading-snug text-destructive">{state.message}</p>
+            <p className="px-1 text-xs leading-snug text-destructive">
+              {state.message}
+            </p>
             <p className="px-1 text-[10px] leading-snug text-muted-foreground">
-              Select text in the app you’re using, then press the shortcut again. On macOS, enable Accessibility
-              for this app (and Terminal if you run via npm).
+              Select text in the app you’re using, then press the shortcut
+              again. On macOS, enable Accessibility for this app (and Terminal
+              if you run via npm).
             </p>
           </div>
         )}
 
-        {state.status === 'result' && (
+        {state.status === "result" && (
           <div className="relative flex min-h-0 flex-1 flex-col gap-2">
             <p className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {state.payload.target === 'en' ? 'English' : 'Vietnamese'}
+              {state.payload.target === "en" ? "English" : "Vietnamese"}
             </p>
             {/* Plain text only — no textarea/input styling; bottom padding so text doesn’t sit under the copy icon */}
             <p

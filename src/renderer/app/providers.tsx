@@ -1,7 +1,8 @@
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
-import { Toaster } from '../../components/ui/sonner';
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { ThemeProvider } from "next-themes";
+import { Toaster } from "../../components/ui/sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,10 +18,17 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-        {children}
-        <Toaster richColors expand position="top-center" closeButton />
-      </ThemeProvider>
+      <HotkeysProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster richColors expand position="top-center" closeButton />
+        </ThemeProvider>
+      </HotkeysProvider>
     </QueryClientProvider>
   );
 }
