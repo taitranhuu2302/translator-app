@@ -29,6 +29,9 @@ export class GeminiProvider implements AiServiceProvider {
         systemInstruction: buildImproveSystemPrompt(req.outputLang),
         maxOutputTokens: 256,
         temperature: 0.4,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
       },
     });
 
