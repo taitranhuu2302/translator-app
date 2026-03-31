@@ -26,10 +26,11 @@ const config: ForgeConfig = {
     new PublisherGithub({
       repository: {
         owner: "taitranhuu2302",
-        name: "nextg-translate", // ← đổi thành tên repo GitHub của bạn
+        name: "english-tool",
       },
       prerelease: false,
       draft: true,
+      generateReleaseNotes: true,
     }),
   ],
   plugins: [
