@@ -28,6 +28,7 @@ export class GroqProvider implements AiServiceProvider {
       messages,
       max_tokens: 256,
       temperature: 0.4,
+      reasoning_effort: "none",
     });
 
     const raw = completion.choices[0]?.message?.content ?? "";

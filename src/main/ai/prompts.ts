@@ -8,7 +8,6 @@ export function buildImproveSystemPrompt(outputLang: string): string {
     `{"corrected": "the corrected version in ${lang}", "suggestion": "a more elegant alternative in ${lang}"}\n` +
     `Rules:\n` +
     `- Output MUST be valid JSON only, no markdown code blocks, no extra text\n` +
-    `- Do not include thinking process or explanations\n` +
     `- Both fields are required and must be non-empty strings`
   );
 }
