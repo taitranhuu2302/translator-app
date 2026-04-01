@@ -328,6 +328,7 @@ export function ImprovePage() {
               </CardHeader>
               <CardContent className="space-y-2 px-3 pb-3 pt-0">
                 <Textarea
+                  autoFocus
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}

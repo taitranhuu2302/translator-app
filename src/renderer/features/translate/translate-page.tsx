@@ -166,6 +166,7 @@ export function TranslatePage() {
             </CardHeader>
             <CardContent className="space-y-1.5 px-3 pb-2.5 pt-0">
               <Textarea
+                autoFocus
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
