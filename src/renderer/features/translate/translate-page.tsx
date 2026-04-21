@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeftRight,
   Copy,
@@ -17,8 +17,8 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
-import { Separator } from "../../../components/ui/separator";
 import { Kbd, KbdGroup } from "../../../components/ui/kbd";
+import { Separator } from "../../../components/ui/separator";
 import { cn } from "../../../lib/utils";
 import { useTranslate } from "./use-translate";
 import { useSettings } from "../settings/use-settings";
@@ -27,6 +27,7 @@ import { bridge } from "../../lib/bridge";
 import { formatAcceleratorParts } from "../../lib/format-shortcut";
 import { useTTS } from "../../lib/use-speech";
 import type {
+  LanguageCode,
   ManualDirection,
   TranslateSource,
   TranslationDetails,
@@ -45,6 +46,106 @@ function directionLabel(dir: ManualDirection): {
 const swapHotkeyParts = formatAcceleratorParts("CommandOrControl+Shift+S");
 const swapHotkeyTitle = swapHotkeyParts.join("+");
 
+const VI_MARK_REGEX =
+  /[ăâđêôơưáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ]/i;
+const WORD_REGEX = /[A-Za-zÀ-ỹ]+/g;
+const VI_WORDS = new Set([
+  "toi",
+  "tôi",
+  "ban",
+  "bạn",
+  "la",
+  "là",
+  "mot",
+  "một",
+  "va",
+  "và",
+  "khong",
+  "không",
+  "cho",
+  "vui",
+  "xin",
+  "cam",
+  "ơn",
+  "duoc",
+  "được",
+  "nhu",
+  "như",
+]);
+const EN_WORDS = new Set([
+  "the",
+  "and",
+  "is",
+  "are",
+  "you",
+  "your",
+  "this",
+  "that",
+  "for",
+  "with",
+  "please",
+  "thanks",
+  "hello",
+  "hi",
+]);
+
+type DetectedLanguage = "vi" | "en" | "mixed" | "empty";
+type TranslationMode = "manual" | "auto";
+
+function detectLanguage(text: string): DetectedLanguage {
+  const trimmed = text.trim();
+  if (!trimmed) return "empty";
+
+  const hasVietnameseMarks = VI_MARK_REGEX.test(trimmed);
+  const words = trimmed.toLowerCase().match(WORD_REGEX) ?? [];
+
+  let viHits = hasVietnameseMarks ? 1 : 0;
+  let enHits = 0;
+
+  for (const word of words) {
+    if (VI_WORDS.has(word)) viHits += 1;
+    if (EN_WORDS.has(word)) enHits += 1;
+  }
+
+  if (hasVietnameseMarks && enHits > 0) return "mixed";
+  if (viHits > 0 && enHits > 0) return "mixed";
+  if (viHits > 0) return "vi";
+  return "en";
+}
+
+function resolveTranslationPlan(text: string): {
+  detected: DetectedLanguage;
+  source: TranslateSource;
+  target: LanguageCode;
+} {
+  const detected = detectLanguage(text);
+
+  if (detected === "vi") {
+    return { detected, source: "vi", target: "en" };
+  }
+
+  if (detected === "en") {
+    return { detected, source: "en", target: "vi" };
+  }
+
+  if (detected === "mixed") {
+    return { detected, source: "auto", target: "en" };
+  }
+
+  return { detected, source: "auto", target: "en" };
+}
+
+function detectedLabel(detected: DetectedLanguage): string {
+  if (detected === "vi") return "Vietnamese";
+  if (detected === "en") return "English";
+  if (detected === "mixed") return "Mixed (VI + EN)";
+  return "Waiting for input";
+}
+
+function languageLabel(lang: LanguageCode): string {
+  return lang === "vi" ? "Vietnamese" : "English";
+}
+
 function formatConfidence(confidence?: number): string | null {
   if (typeof confidence !== "number" || Number.isNaN(confidence)) return null;
   return `${Math.round(confidence * 100)}%`;
@@ -52,11 +153,11 @@ function formatConfidence(confidence?: number): string | null {
 
 export function TranslatePage() {
   const { data: settings } = useSettings();
-  const [direction, setDirection] = useState<ManualDirection>(
-    settings?.manualDirection ?? "vi-en",
-  );
+  const [mode, setMode] = useState<TranslationMode>("manual");
+  const [direction, setDirection] = useState<ManualDirection>("vi-en");
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
+  const [outputLang, setOutputLang] = useState<LanguageCode>("en");
   const [details, setDetails] = useState<TranslationDetails | null>(null);
   const [showCopiedTip, setShowCopiedTip] = useState(false);
 
@@ -71,20 +172,36 @@ export function TranslatePage() {
   //   setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
   // });
 
-  const labels = directionLabel(direction);
+  useEffect(() => {
+    if (settings?.manualDirection) {
+      setDirection(settings.manualDirection);
+    }
+  }, [settings?.manualDirection]);
+
+  const plan = useMemo(() => resolveTranslationPlan(input), [input]);
+  const manualLabels = directionLabel(direction);
+
+  const activeSourceLabel =
+    mode === "manual" ? manualLabels.source : "Auto detect (VI/EN)";
+  const activeTargetLabel =
+    mode === "manual" ? manualLabels.target : languageLabel(plan.target);
 
   async function handleTranslate() {
     if (!input.trim()) {
       showError("Please enter some text to translate");
       return;
     }
-    const result = await translate({
-      source: (direction === "vi-en" ? "vi" : "en") as TranslateSource,
-      target: direction === "vi-en" ? "en" : "vi",
-      text: input,
-    });
+
+    const source: TranslateSource =
+      mode === "manual" ? (direction === "vi-en" ? "vi" : "en") : plan.source;
+    const target: LanguageCode =
+      mode === "manual" ? (direction === "vi-en" ? "en" : "vi") : plan.target;
+
+    const result = await translate({ source, target, text: input });
+
     if (isOk(result)) {
       setOutput(result.data.translation);
+      setOutputLang(target);
       setDetails(result.data.details ?? null);
     } else if (isErr(result)) {
       setDetails(null);
@@ -92,7 +209,9 @@ export function TranslatePage() {
     }
   }
 
-  const handleSwap = useCallback(() => {
+  function handleSwap() {
+    if (mode !== "manual") return;
+
     const prevInput = input;
     const prevOutput = output;
 
@@ -104,17 +223,24 @@ export function TranslatePage() {
       setInput(prevInput);
       setOutput("");
     }
+
     setDetails(null);
     ttsInput.stop();
     ttsOutput.stop();
-    // stt.stop(); // TODO: re-enable when STT is fixed
-  }, [input, output, ttsInput, ttsOutput]);
+  }
 
   useEffect(() => {
     setShowCopiedTip(false);
   }, [output]);
 
-  useHotkeys([{ hotkey: "Mod+Shift+S", callback: () => handleSwap() }]);
+  useHotkeys([
+    {
+      hotkey: "Mod+Shift+S",
+      callback: () => {
+        if (mode === "manual") handleSwap();
+      },
+    },
+  ]);
 
   async function handleCopy() {
     if (!output) return;
@@ -139,6 +265,27 @@ export function TranslatePage() {
       {/* Scroll: entire translate UI so nothing is clipped at the window edge */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-2 sm:px-4 sm:py-3">
         <div className="mx-auto flex w-full max-w-xl flex-col gap-2.5 pb-4">
+          <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-border/80 bg-muted/25 p-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "manual" ? "default" : "ghost"}
+              className="h-7 text-xs"
+              onClick={() => setMode("manual")}
+            >
+              Manual
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={mode === "auto" ? "default" : "ghost"}
+              className="h-7 text-xs"
+              onClick={() => setMode("auto")}
+            >
+              Auto Detect
+            </Button>
+          </div>
+
           {/* Compact language bar — one row */}
           <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/25 px-2 py-1.5">
             <div className="min-w-0 flex-1">
@@ -146,40 +293,53 @@ export function TranslatePage() {
                 From
               </p>
               <p className="truncate text-xs font-semibold leading-tight">
-                {labels.source}
+                {activeSourceLabel}
               </p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-8 shrink-0 rounded-full"
-              onClick={handleSwap}
-              title={`Swap languages (${swapHotkeyTitle})`}
-            >
-              <ArrowLeftRight className="size-3.5" />
-            </Button>
+            {mode === "manual" ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-8 shrink-0 rounded-full"
+                onClick={handleSwap}
+                title={`Swap languages (${swapHotkeyTitle})`}
+              >
+                <ArrowLeftRight className="size-3.5" />
+              </Button>
+            ) : (
+              <Badge
+                variant="outline"
+                className="h-6 shrink-0 px-2 text-[10px]"
+              >
+                {detectedLabel(plan.detected)}
+              </Badge>
+            )}
             <div className="min-w-0 flex-1 text-right">
               <p className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
                 To
               </p>
               <p className="truncate text-xs font-semibold leading-tight">
-                {labels.target}
+                {activeTargetLabel}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-1 text-[10px] text-muted-foreground">
-            <span>Quick swap</span>
-            <KbdGroup>
-              {swapHotkeyParts.map((p, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && <span className="text-muted-foreground/70">+</span>}
-                  <Kbd className="font-mono text-[10px]">{p}</Kbd>
-                </React.Fragment>
-              ))}
-            </KbdGroup>
-          </div>
+          {mode === "manual" && (
+            <div className="flex flex-wrap items-center justify-center gap-1 text-[10px] text-muted-foreground">
+              <span>Quick swap</span>
+              <KbdGroup>
+                {swapHotkeyParts.map((p, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && (
+                      <span className="text-muted-foreground/70">+</span>
+                    )}
+                    <Kbd className="font-mono text-[10px]">{p}</Kbd>
+                  </React.Fragment>
+                ))}
+              </KbdGroup>
+            </div>
+          )}
 
           <Card className="gap-0 py-0 shadow-sm">
             <CardHeader className="space-y-0 px-3 py-2 pb-1.5">
@@ -194,7 +354,11 @@ export function TranslatePage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={`Paste ${labels.source} text…`}
+                  placeholder={
+                    mode === "manual"
+                      ? `Paste ${manualLabels.source} text…`
+                      : "Paste Vietnamese or English text…"
+                  }
                   className="min-h-18 max-h-[min(28vh,180px)] resize-y pb-10 pr-26 font-mono text-xs leading-relaxed"
                 />
                 <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
@@ -208,7 +372,13 @@ export function TranslatePage() {
                         ? ttsInput.stop()
                         : ttsInput.speak(
                             input,
-                            direction === "vi-en" ? "vi" : "en",
+                            mode === "manual"
+                              ? direction === "vi-en"
+                                ? "vi"
+                                : "en"
+                              : plan.detected === "vi"
+                                ? "vi"
+                                : "en",
                           )
                     }
                     disabled={!input.trim()}
@@ -246,17 +416,25 @@ export function TranslatePage() {
                 <div className="inline-flex max-w-[min(100%,14rem)] flex-wrap items-center gap-x-1 gap-y-0.5 text-[10px] text-muted-foreground sm:max-w-none">
                   <span>{input.length} chars</span>
                   <span className="text-muted-foreground/60">·</span>
-                  <KbdGroup className="inline-flex flex-wrap">
-                    {swapHotkeyParts.map((p, i) => (
-                      <React.Fragment key={i}>
-                        {i > 0 && (
-                          <span className="text-muted-foreground/70">+</span>
-                        )}
-                        <Kbd className="font-mono text-[9px]">{p}</Kbd>
-                      </React.Fragment>
-                    ))}
-                  </KbdGroup>
-                  <span>swap</span>
+                  {mode === "manual" ? (
+                    <>
+                      <KbdGroup className="inline-flex flex-wrap">
+                        {swapHotkeyParts.map((p, i) => (
+                          <React.Fragment key={i}>
+                            {i > 0 && (
+                              <span className="text-muted-foreground/70">
+                                +
+                              </span>
+                            )}
+                            <Kbd className="font-mono text-[9px]">{p}</Kbd>
+                          </React.Fragment>
+                        ))}
+                      </KbdGroup>
+                      <span>swap</span>
+                    </>
+                  ) : (
+                    <span>{detectedLabel(plan.detected)}</span>
+                  )}
                   <span className="text-muted-foreground/60">·</span>
                   <KbdGroup>
                     <Kbd className="text-[9px]">
@@ -317,10 +495,7 @@ export function TranslatePage() {
                     onClick={() =>
                       ttsOutput.speaking
                         ? ttsOutput.stop()
-                        : ttsOutput.speak(
-                            output,
-                            direction === "vi-en" ? "en" : "vi",
-                          )
+                        : ttsOutput.speak(output, outputLang)
                     }
                     disabled={!output}
                     aria-label={

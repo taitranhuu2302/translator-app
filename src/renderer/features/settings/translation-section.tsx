@@ -9,7 +9,7 @@ import {
 import { Separator } from "../../../components/ui/separator";
 import { SettingRow } from "./setting-row";
 import { useSettings, useUpdateSettings } from "./use-settings";
-import type { LanguageCode } from "../../../shared/types";
+import type { LanguageCode, ManualDirection } from "../../../shared/types";
 
 export function TranslationSection() {
   const { data: settings } = useSettings();
@@ -27,11 +27,11 @@ export function TranslationSection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <SettingRow
-            label="Manual direction"
-            description="Default direction in the translate view"
+            label="Translate page direction"
+            description="Default manual direction in Translate page (you can switch to Auto Detect in the page)."
           >
             <div className="flex gap-1.5">
-              {(["vi-en", "en-vi"] as const).map((d) => (
+              {(["vi-en", "en-vi"] as ManualDirection[]).map((d) => (
                 <Button
                   key={d}
                   size="sm"
