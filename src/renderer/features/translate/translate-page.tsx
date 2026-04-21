@@ -21,7 +21,7 @@ import { Kbd, KbdGroup } from "../../../components/ui/kbd";
 import { Separator } from "../../../components/ui/separator";
 import { cn } from "../../../lib/utils";
 import { useTranslate } from "./use-translate";
-import { useSettings } from "../settings/use-settings";
+import { useSettings, useUpdateSettings } from "../settings/use-settings";
 import { showError } from "../../lib/toast";
 import { bridge } from "../../lib/bridge";
 import { formatAcceleratorParts } from "../../lib/format-shortcut";
@@ -29,6 +29,7 @@ import { useTTS } from "../../lib/use-speech";
 import type {
   LanguageCode,
   ManualDirection,
+  TranslationMode,
   TranslateSource,
   TranslationDetails,
 } from "../../../shared/types";
@@ -90,7 +91,6 @@ const EN_WORDS = new Set([
 ]);
 
 type DetectedLanguage = "vi" | "en" | "mixed" | "empty";
-type TranslationMode = "manual" | "auto";
 
 function detectLanguage(text: string): DetectedLanguage {
   const trimmed = text.trim();
@@ -153,6 +153,7 @@ function formatConfidence(confidence?: number): string | null {
 
 export function TranslatePage() {
   const { data: settings } = useSettings();
+  const { mutate: updateSettings } = useUpdateSettings();
   const [mode, setMode] = useState<TranslationMode>("manual");
   const [direction, setDirection] = useState<ManualDirection>("vi-en");
   const [input, setInput] = useState("");
@@ -177,6 +178,12 @@ export function TranslatePage() {
       setDirection(settings.manualDirection);
     }
   }, [settings?.manualDirection]);
+
+  useEffect(() => {
+    if (settings?.translationMode) {
+      setMode(settings.translationMode);
+    }
+  }, [settings?.translationMode]);
 
   const plan = useMemo(() => resolveTranslationPlan(input), [input]);
   const manualLabels = directionLabel(direction);
@@ -229,6 +236,11 @@ export function TranslatePage() {
     ttsOutput.stop();
   }
 
+  function handleModeChange(nextMode: TranslationMode) {
+    setMode(nextMode);
+    updateSettings({ translationMode: nextMode });
+  }
+
   useEffect(() => {
     setShowCopiedTip(false);
   }, [output]);
@@ -271,7 +283,7 @@ export function TranslatePage() {
               size="sm"
               variant={mode === "manual" ? "default" : "ghost"}
               className="h-7 text-xs"
-              onClick={() => setMode("manual")}
+              onClick={() => handleModeChange("manual")}
             >
               Manual
             </Button>
@@ -280,7 +292,7 @@ export function TranslatePage() {
               size="sm"
               variant={mode === "auto" ? "default" : "ghost"}
               className="h-7 text-xs"
-              onClick={() => setMode("auto")}
+              onClick={() => handleModeChange("auto")}
             >
               Auto Detect
             </Button>

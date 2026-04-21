@@ -1,6 +1,7 @@
 export type LanguageCode = "vi" | "en";
 export type TranslateSource = "auto" | "vi" | "en";
 export type ManualDirection = "vi-en" | "en-vi";
+export type TranslationMode = "manual" | "auto";
 
 // ─── AI Provider ──────────────────────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ export interface TranslationResult {
 export interface AppSettings {
   version: number;
   // Translation
+  translationMode: TranslationMode;
   manualDirection: ManualDirection;
   quickTargetLanguage: LanguageCode;
   // AI
@@ -117,6 +119,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 3,
+  translationMode: "manual",
   manualDirection: "vi-en",
   quickTargetLanguage: "vi",
   aiProvider: "auto",
