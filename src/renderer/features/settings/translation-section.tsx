@@ -74,7 +74,7 @@ export function TranslationSection() {
           <Separator />
           <SettingRow
             label="Quick translate target"
-            description="Target language for the global shortcut"
+            description="Target language for quick translate popup"
           >
             <div className="flex gap-1.5">
               {(["vi", "en"] as LanguageCode[]).map((lang) => (
@@ -88,6 +88,29 @@ export function TranslationSection() {
                   }
                   className="h-7 text-xs"
                   onClick={() => update({ quickTargetLanguage: lang })}
+                >
+                  {lang === "vi" ? "Vietnamese" : "English"}
+                </Button>
+              ))}
+            </div>
+          </SettingRow>
+          <Separator />
+          <SettingRow
+            label="Quick replace target"
+            description="Target language for translate-and-replace shortcut"
+          >
+            <div className="flex gap-1.5">
+              {(["vi", "en"] as LanguageCode[]).map((lang) => (
+                <Button
+                  key={lang}
+                  size="sm"
+                  variant={
+                    settings.quickReplaceTargetLanguage === lang
+                      ? "default"
+                      : "outline"
+                  }
+                  className="h-7 text-xs"
+                  onClick={() => update({ quickReplaceTargetLanguage: lang })}
                 >
                   {lang === "vi" ? "Vietnamese" : "English"}
                 </Button>

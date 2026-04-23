@@ -56,6 +56,10 @@ const config: ForgeConfig = {
           name: "quick_window",
           config: "vite.renderer.quick.config.ts",
         },
+        {
+          name: "loading_window",
+          config: "vite.renderer.loading.config.ts",
+        },
       ],
     }),
     new FusesPlugin({

@@ -43,6 +43,7 @@ function normalizeTranslationError(error: unknown): ReturnType<typeof err> {
 export function registerIpcHandlers(handlers: {
   toggleApp: () => void;
   quickTranslate: () => void;
+  quickTranslateReplace: () => void;
 }): void {
   const settings = getSettingsStore();
   const provider = getTranslationProvider();
@@ -72,6 +73,8 @@ export function registerIpcHandlers(handlers: {
       const s = settings.get();
       const resetPatch: Partial<AppSettings> = {
         quickTranslateShortcut: DEFAULT_SETTINGS.quickTranslateShortcut,
+        quickTranslateReplaceShortcut:
+          DEFAULT_SETTINGS.quickTranslateReplaceShortcut,
         toggleAppShortcut: DEFAULT_SETTINGS.toggleAppShortcut,
       };
 
@@ -82,16 +85,22 @@ export function registerIpcHandlers(handlers: {
         handlers.quickTranslate,
       );
       const result2 = sm.updateShortcut(
+        "quickTranslateReplace",
+        resetPatch.quickTranslateReplaceShortcut!,
+        handlers.quickTranslateReplace,
+      );
+      const result3 = sm.updateShortcut(
         "toggleApp",
         resetPatch.toggleAppShortcut!,
         handlers.toggleApp,
       );
 
-      if (!result1.success || !result2.success) {
+      if (!result1.success || !result2.success || !result3.success) {
         return err(
           "SHORTCUT_REGISTER_FAILED",
           result1.error ??
             result2.error ??
+            result3.error ??
             "Could not register default shortcuts",
         );
       }
@@ -213,6 +222,7 @@ export function registerIpcHandlers(handlers: {
 
   ipcMain.handle(IPC.QUICK_CLOSE, () => {
     suppressMainOnActivateFor(1500);
+    wm.hideLoading();
     wm.hideQuick({ suppressMainFocus: true });
   });
 
@@ -234,13 +244,23 @@ export function registerIpcHandlers(handlers: {
       {
         key,
         value,
-      }: { key: "quickTranslateShortcut" | "toggleAppShortcut"; value: string },
+      }: {
+        key:
+          | "quickTranslateShortcut"
+          | "quickTranslateReplaceShortcut"
+          | "toggleAppShortcut";
+        value: string;
+      },
     ) => {
-      const role =
-        key === "quickTranslateShortcut" ? "quickTranslate" : "toggleApp";
-      const handler =
-        role === "quickTranslate"
-          ? handlers.quickTranslate
+      const role = key === "quickTranslateShortcut"
+        ? "quickTranslate"
+        : key === "quickTranslateReplaceShortcut"
+          ? "quickTranslateReplace"
+          : "toggleApp";
+      const handler = role === "quickTranslate"
+        ? handlers.quickTranslate
+        : role === "quickTranslateReplace"
+          ? handlers.quickTranslateReplace
           : handlers.toggleApp;
 
       const result = sm.updateShortcut(role, value, handler);

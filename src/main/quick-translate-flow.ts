@@ -1,8 +1,11 @@
+import { clipboard } from "electron";
 import { PUSH } from "../shared/ipc-channels";
 import { ok, err, isErr, type Result } from "../shared/types";
 import { getSettingsStore } from "./settings/settings-store";
 import { getWindowManager } from "./windows/window-manager";
 import { getSelectionCaptureService } from "./selection/selection-capture-service";
+import { getClipboardSnapshotService } from "./selection/clipboard-snapshot-service";
+import { ShellNativeInputAdapter } from "./selection/native-input-adapter";
 import { getTranslationProvider } from "./translation/google-translate-provider";
 import { ensureQuickTranslatePermissions } from "./permissions/macos-permissions";
 
@@ -38,9 +41,16 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
   const settings = getSettingsStore();
   const s = settings.get();
 
+  if (quickWin.isVisible()) {
+    wm.hideQuick({ suppressMainFocus: true });
+  }
+  // Show immediate visual feedback near cursor on shortcut press.
+  wm.showLoading(s.popupAlwaysOnTop);
+
   if (process.platform === "darwin") {
     const permission = await ensureQuickTranslatePermissions();
-    if (!permission.ok) {
+    if ("ok" in permission && permission.ok === false) {
+      wm.hideLoading();
       quickWin.webContents.send(PUSH.QUICK_ERROR, permission.message);
       wm.showQuick(s.popupAlwaysOnTop);
       return err("SELECTION_CAPTURE_FAILED", permission.message);
@@ -51,10 +61,7 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
   if (mainWin?.isVisible() && mainWin.isFocused()) {
     mainWin.hide();
   }
-  if (quickWin.isVisible()) {
-    quickWin.hide();
-  }
-  await delay(280);
+  await delay(220);
 
   const capture = getSelectionCaptureService();
   const provider = getTranslationProvider();
@@ -66,6 +73,7 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
       restoreClipboard: s.restoreClipboard,
     });
   } catch (error: unknown) {
+    wm.hideLoading();
     const msg = error instanceof Error ? error.message : String(error);
     const clean = msg.replace("SELECTION_CAPTURE_FAILED: ", "");
     quickWin.webContents.send(PUSH.QUICK_ERROR, clean);
@@ -73,27 +81,127 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
     return err("SELECTION_CAPTURE_FAILED", clean);
   }
 
-  quickWin.webContents.send(PUSH.QUICK_LOADING);
-  wm.showQuick(s.popupAlwaysOnTop);
-
   try {
     const result = await provider.translate({
       source: "auto",
       target: s.quickTargetLanguage,
       text,
     });
+    wm.hideLoading();
     quickWin.webContents.send(PUSH.QUICK_SHOW, {
       original: text,
       translated: result.translation,
       source: result.source,
       target: result.target,
     });
+    wm.showQuick(s.popupAlwaysOnTop);
     return ok(undefined);
   } catch (error: unknown) {
+    wm.hideLoading();
     const r = normalizeTranslateError(error);
     if (isErr(r)) {
       quickWin.webContents.send(PUSH.QUICK_ERROR, r.error.message);
+      wm.showQuick(s.popupAlwaysOnTop);
     }
     return r;
   }
+}
+
+export async function runQuickTranslateReplacePipeline(): Promise<
+  Result<void>
+> {
+  const wm = getWindowManager();
+  const quickWin = wm.getQuickWindow();
+  if (!quickWin) {
+    return err("POPUP_NOT_READY", "Quick window is not initialized");
+  }
+
+  const settings = getSettingsStore();
+  const s = settings.get();
+  // Show immediate visual feedback near cursor on shortcut press.
+  wm.showLoading(s.popupAlwaysOnTop);
+
+  const capture = getSelectionCaptureService();
+  const provider = getTranslationProvider();
+  const clipboardService = getClipboardSnapshotService();
+  const nativeInput = new ShellNativeInputAdapter();
+
+  if (process.platform === "darwin") {
+    const permission = await ensureQuickTranslatePermissions();
+    if ("ok" in permission && permission.ok === false) {
+      wm.hideLoading();
+      return err("SELECTION_CAPTURE_FAILED", permission.message);
+    }
+  }
+
+  const mainWin = wm.getMainWindow();
+  if (mainWin?.isVisible() && mainWin.isFocused()) {
+    mainWin.hide();
+  }
+  await delay(220);
+
+  let selectedText: string;
+  try {
+    selectedText = await capture.captureSelectedText({
+      delayMs: s.autoCopyDelayMs,
+      restoreClipboard: false,
+    });
+  } catch (error: unknown) {
+    wm.hideLoading();
+    const msg = error instanceof Error ? error.message : String(error);
+    const clean = msg.replace("SELECTION_CAPTURE_FAILED: ", "");
+    return err("SELECTION_CAPTURE_FAILED", clean);
+  }
+
+  let translatedText: string;
+  try {
+    const result = await provider.translate({
+      source: "auto",
+      target: s.quickReplaceTargetLanguage,
+      text: selectedText,
+    });
+    translatedText = result.translation;
+  } catch (error: unknown) {
+    wm.hideLoading();
+    const r = normalizeTranslateError(error);
+    if (isErr(r)) {
+      quickWin.webContents.send(PUSH.QUICK_ERROR, r.error.message);
+      wm.showQuick(s.popupAlwaysOnTop);
+    }
+    return r;
+  }
+
+  const snapshot = clipboardService.snapshot();
+  try {
+    clipboard.writeText(translatedText);
+    // Give OS clipboard a moment before sending paste keystroke.
+    await delay(80);
+    await nativeInput.simulatePasteShortcut();
+    // Keep translated clipboard available briefly so target app can consume it.
+    await delay(120);
+  } catch (error: unknown) {
+    wm.hideLoading();
+    const msg = error instanceof Error ? error.message : String(error);
+    quickWin.webContents.send(
+      PUSH.QUICK_ERROR,
+      `Could not replace selected text. ${msg}`,
+    );
+    wm.showQuick(s.popupAlwaysOnTop);
+    return err(
+      "SELECTION_CAPTURE_FAILED",
+      `Could not replace selected text. ${msg}`,
+    );
+  } finally {
+    if (s.restoreClipboard) {
+      try {
+        clipboardService.restore(snapshot);
+      } catch (restoreError: unknown) {
+        console.warn("[QuickReplace] Clipboard restore failed:", restoreError);
+      }
+    }
+  }
+
+  wm.hideLoading();
+  wm.hideQuick({ suppressMainFocus: true });
+  return ok(undefined);
 }

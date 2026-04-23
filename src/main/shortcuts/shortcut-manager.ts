@@ -9,6 +9,7 @@ const ACCELERATOR_REGEX =
 export interface RegisteredShortcuts {
   toggleApp: string;
   quickTranslate: string;
+  quickTranslateReplace: string;
 }
 
 class ShortcutManager {
@@ -43,7 +44,11 @@ class ShortcutManager {
     return mods.every((m) => MODIFIERS.has(m));
   }
 
-  register(role: 'toggleApp' | 'quickTranslate', accelerator: string, handler: ShortcutHandler): boolean {
+  register(
+    role: 'toggleApp' | 'quickTranslate' | 'quickTranslateReplace',
+    accelerator: string,
+    handler: ShortcutHandler,
+  ): boolean {
     if (!this.validateFormat(accelerator)) return false;
 
     // Check internal conflict
@@ -65,7 +70,7 @@ class ShortcutManager {
   }
 
   updateShortcut(
-    role: 'toggleApp' | 'quickTranslate',
+    role: 'toggleApp' | 'quickTranslate' | 'quickTranslateReplace',
     newAccelerator: string,
     handler: ShortcutHandler,
   ): { success: boolean; error?: string } {
@@ -115,7 +120,8 @@ class ShortcutManager {
   getRegistered(): RegisteredShortcuts {
     const toggleApp = this.getAcceleratorForRole('toggleApp') ?? '';
     const quickTranslate = this.getAcceleratorForRole('quickTranslate') ?? '';
-    return { toggleApp, quickTranslate };
+    const quickTranslateReplace = this.getAcceleratorForRole('quickTranslateReplace') ?? '';
+    return { toggleApp, quickTranslate, quickTranslateReplace };
   }
 }
 
@@ -128,9 +134,18 @@ export function getShortcutManager(): ShortcutManager {
 
 export function registerDefaultShortcuts(
   settings: AppSettings,
-  handlers: { toggleApp: ShortcutHandler; quickTranslate: ShortcutHandler },
+  handlers: {
+    toggleApp: ShortcutHandler;
+    quickTranslate: ShortcutHandler;
+    quickTranslateReplace: ShortcutHandler;
+  },
 ): void {
   const sm = getShortcutManager();
   sm.register('toggleApp', settings.toggleAppShortcut, handlers.toggleApp);
   sm.register('quickTranslate', settings.quickTranslateShortcut, handlers.quickTranslate);
+  sm.register(
+    'quickTranslateReplace',
+    settings.quickTranslateReplaceShortcut,
+    handlers.quickTranslateReplace,
+  );
 }

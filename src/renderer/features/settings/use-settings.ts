@@ -50,7 +50,13 @@ export function useValidateShortcut() {
   });
 }
 
-type UpdateShortcutVars = { key: 'quickTranslateShortcut' | 'toggleAppShortcut'; value: string };
+type UpdateShortcutVars = {
+  key:
+    | 'quickTranslateShortcut'
+    | 'quickTranslateReplaceShortcut'
+    | 'toggleAppShortcut';
+  value: string;
+};
 
 export function useUpdateShortcut() {
   const qc = useQueryClient();

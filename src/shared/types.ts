@@ -98,6 +98,7 @@ export interface AppSettings {
   translationMode: TranslationMode;
   manualDirection: ManualDirection;
   quickTargetLanguage: LanguageCode;
+  quickReplaceTargetLanguage: LanguageCode;
   // AI
   aiProvider: AiProvider;
   aiGroqApiKey: string;
@@ -107,6 +108,7 @@ export interface AppSettings {
   improveOutputLang: LanguageCode;
   // Shortcuts
   quickTranslateShortcut: string;
+  quickTranslateReplaceShortcut: string;
   toggleAppShortcut: string;
   // Behavior
   autoCopyDelayMs: number;
@@ -122,6 +124,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   translationMode: "manual",
   manualDirection: "vi-en",
   quickTargetLanguage: "vi",
+  quickReplaceTargetLanguage: "en",
   aiProvider: "auto",
   aiGroqApiKey: "",
   aiGroqModel: "llama-3.3-70b-versatile",
@@ -129,6 +132,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiGeminiModel: "gemini-2.0-flash",
   improveOutputLang: "en",
   quickTranslateShortcut: "CommandOrControl+Alt+T",
+  quickTranslateReplaceShortcut: "Shift+Alt+T",
   toggleAppShortcut: "CommandOrControl+Shift+Space",
   autoCopyDelayMs: 200,
   restoreClipboard: true,

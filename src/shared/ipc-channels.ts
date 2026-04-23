@@ -90,7 +90,13 @@ export interface IpcInvokeMap {
   [IPC.SHORTCUT_VALIDATE]: { args: [string]; ret: Result<void> };
   [IPC.SHORTCUT_UPDATE]: {
     args: [
-      { key: "quickTranslateShortcut" | "toggleAppShortcut"; value: string },
+      {
+        key:
+          | "quickTranslateShortcut"
+          | "quickTranslateReplaceShortcut"
+          | "toggleAppShortcut";
+        value: string;
+      },
     ];
     ret: Result<AppSettings>;
   };

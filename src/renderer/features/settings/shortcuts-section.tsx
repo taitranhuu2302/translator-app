@@ -64,6 +64,12 @@ export function ShortcutsSection() {
           />
           <Separator />
           <ShortcutInput
+            label="Quick Translate + Replace"
+            settingKey="quickTranslateReplaceShortcut"
+            currentValue={settings.quickTranslateReplaceShortcut}
+          />
+          <Separator />
+          <ShortcutInput
             label="Toggle App Window"
             settingKey="toggleAppShortcut"
             currentValue={settings.toggleAppShortcut}

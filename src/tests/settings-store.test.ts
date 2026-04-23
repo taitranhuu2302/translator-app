@@ -42,6 +42,8 @@ describe('SettingsStore', () => {
     expect(s.version).toBe(DEFAULT_SETTINGS.version);
     expect(s.quickTranslateShortcut).toBe(DEFAULT_SETTINGS.quickTranslateShortcut);
     expect(s.manualDirection).toBe(DEFAULT_SETTINGS.manualDirection);
+    expect(s.quickTargetLanguage).toBe('vi');
+    expect(s.quickReplaceTargetLanguage).toBe('en');
   });
 
   it('loads and merges persisted settings', async () => {
@@ -86,7 +88,7 @@ describe('SettingsStore', () => {
     const fresh = await import('../main/settings/settings-store');
     const store = fresh.getSettingsStore();
     const s = store.get();
-    expect(s.version).toBe(1);
+    expect(s.version).toBe(DEFAULT_SETTINGS.version);
     expect(s.manualDirection).toBe('en-vi');
   });
 });

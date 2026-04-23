@@ -12,9 +12,13 @@ Type or paste text into the Input field and press **Translate** (or `Ctrl+Enter`
 ### Quick Translate (floating popup)
 The core feature: **select any text in any app**, press the global shortcut (default `Ctrl+Alt+T` / `⌘⌥T`) — a small popup appears with the translation instantly, without switching windows. Press `Esc` or click outside to dismiss.
 
+### Quick Translate + Replace
+Select any text in any app, then press the replace shortcut (default `Shift+Alt+T`). The app translates the selected text to your configured quick target language and pastes it back to replace the original selection.
+
 ### Custom Shortcuts
 Both global shortcuts can be changed in **Settings**:
 - **Quick Translate** — shortcut to translate the currently selected text
+- **Quick Translate + Replace** — shortcut to translate and replace the selected text in place
 - **Toggle App Window** — show/hide the main window
 
 Shortcuts are validated before saving and automatically rolled back if registration fails.
@@ -50,6 +54,7 @@ npm start
 | Action | Windows / Linux | macOS |
 |--------|-----------------|-------|
 | Quick Translate | `Ctrl+Alt+T` | `⌘⌥T` |
+| Quick Translate + Replace | `Shift+Alt+T` | `⌥⇧T` |
 | Toggle App Window | `Ctrl+Shift+Space` | `⌘⇧Space` |
 | Swap language direction | `Ctrl+Shift+S` | `⌘⇧S` |
 | Translate (in-app) | `Ctrl+Enter` | `⌘↵` |

@@ -9,6 +9,8 @@ declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
 declare const QUICK_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const QUICK_WINDOW_VITE_NAME: string;
+declare const LOADING_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const LOADING_WINDOW_VITE_NAME: string;
 
 /** Preload output is `.vite/build/preload.js`; `__dirname` is usually that folder but can be `.vite` in some runs. */
 function resolvePreloadPath(): string {
@@ -28,6 +30,8 @@ const isDev = !app.isPackaged;
 const MAIN_WINDOW_SIZE = { width: 720, height: 520 };
 /** Compact floating panel; content scrolls inside */
 const QUICK_WINDOW_SIZE = { width: 320, height: 240 };
+/** Tiny loader indicator shown near cursor while processing shortcuts */
+const LOADING_WINDOW_SIZE = { width: 44, height: 44 };
 
 const CURSOR_OFFSET = 12;
 
@@ -59,6 +63,7 @@ function clampQuickWindowToWorkArea(
 class WindowManager {
   private mainWindow: BrowserWindow | null = null;
   private quickWindow: BrowserWindow | null = null;
+  private loadingWindow: BrowserWindow | null = null;
 
   createMainWindow(): BrowserWindow {
     const appIcon = app.isPackaged
@@ -113,6 +118,7 @@ class WindowManager {
       }
       e.preventDefault();
       this.hideQuick();
+      this.hideLoading();
       const mw = this.mainWindow;
       if (mw && !mw.isDestroyed()) {
         try {
@@ -175,12 +181,57 @@ class WindowManager {
     return this.quickWindow;
   }
 
+  createLoadingWindow(): BrowserWindow {
+    this.loadingWindow = new BrowserWindow({
+      ...LOADING_WINDOW_SIZE,
+      show: false,
+      frame: false,
+      resizable: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      transparent: true,
+      focusable: false,
+      webPreferences: {
+        preload: PRELOAD_PATH,
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: false,
+        webSecurity: true,
+      },
+    });
+
+    this.loadingWindow.setIgnoreMouseEvents(true);
+    this.loadingWindow.webContents.setWindowOpenHandler(() => ({
+      action: "deny",
+    }));
+
+    if (LOADING_WINDOW_VITE_DEV_SERVER_URL) {
+      const base = LOADING_WINDOW_VITE_DEV_SERVER_URL.replace(/\/$/, "");
+      this.loadingWindow.loadURL(`${base}/index-loading.html`);
+    } else {
+      this.loadingWindow.loadFile(
+        path.join(
+          __dirname,
+          `../renderer/${LOADING_WINDOW_VITE_NAME}/index-loading.html`,
+        ),
+      );
+    }
+
+    return this.loadingWindow;
+  }
+
   getMainWindow(): BrowserWindow | null {
     return this.mainWindow;
   }
 
   getQuickWindow(): BrowserWindow | null {
     const w = this.quickWindow;
+    if (!w || w.isDestroyed()) return null;
+    return w;
+  }
+
+  getLoadingWindow(): BrowserWindow | null {
+    const w = this.loadingWindow;
     if (!w || w.isDestroyed()) return null;
     return w;
   }
@@ -227,6 +278,25 @@ class WindowManager {
     w.showInactive();
   }
 
+  showLoading(alwaysOnTop: boolean): void {
+    const w = this.loadingWindow;
+    if (!w || w.isDestroyed()) return;
+    w.setAlwaysOnTop(alwaysOnTop);
+    const point = screen.getCursorScreenPoint();
+    const bounds = w.getBounds();
+    const width = bounds.width > 0 ? bounds.width : LOADING_WINDOW_SIZE.width;
+    const height =
+      bounds.height > 0 ? bounds.height : LOADING_WINDOW_SIZE.height;
+    const [x, y] = clampQuickWindowToWorkArea(
+      point.x + CURSOR_OFFSET,
+      point.y + CURSOR_OFFSET,
+      width,
+      height,
+    );
+    w.setPosition(x, y);
+    w.showInactive();
+  }
+
   /**
    * Hide the quick panel. When `suppressMainFocus` is true (default), avoid bringing the main
    * window to the front / stealing focus after the floating panel closes (Electron otherwise
@@ -235,24 +305,24 @@ class WindowManager {
   hideQuick(options?: { suppressMainFocus?: boolean }): void {
     const suppressMainFocus = options?.suppressMainFocus !== false;
     const w = this.quickWindow;
-    const mw = this.mainWindow;
+    if (!w || w.isDestroyed()) return;
 
-    if (suppressMainFocus && mw && !mw.isDestroyed() && mw.isVisible()) {
+    // Prevent focus handoff to our own app windows while the quick panel is closing.
+    if (suppressMainFocus) {
       try {
-        mw.setFocusable(false);
+        w.setFocusable(false);
       } catch {
         /* ignore */
       }
     }
 
-    if (w) safeHideBrowserWindow(w);
+    safeHideBrowserWindow(w);
 
-    if (suppressMainFocus && mw && !mw.isDestroyed()) {
+    if (suppressMainFocus) {
       const restore = (): void => {
         try {
-          if (mw.isDestroyed()) return;
-          mw.setFocusable(true);
-          if (mw.isVisible()) mw.blur();
+          if (w.isDestroyed()) return;
+          w.setFocusable(true);
         } catch {
           /* ignore */
         }
@@ -260,6 +330,12 @@ class WindowManager {
       setImmediate(restore);
       setTimeout(restore, 50);
     }
+  }
+
+  hideLoading(): void {
+    const w = this.loadingWindow;
+    if (!w || w.isDestroyed()) return;
+    safeHideBrowserWindow(w);
   }
 
   setQuickAlwaysOnTop(value: boolean): void {

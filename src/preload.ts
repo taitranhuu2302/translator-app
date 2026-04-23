@@ -94,7 +94,10 @@ const api = {
     validate: (accelerator: string): Promise<Result<void>> =>
       ipcRenderer.invoke(IPC.SHORTCUT_VALIDATE, accelerator),
     update: (
-      key: "quickTranslateShortcut" | "toggleAppShortcut",
+      key:
+        | "quickTranslateShortcut"
+        | "quickTranslateReplaceShortcut"
+        | "toggleAppShortcut",
       value: string,
     ): Promise<Result<AppSettings>> =>
       ipcRenderer.invoke(IPC.SHORTCUT_UPDATE, { key, value }),

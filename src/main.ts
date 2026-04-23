@@ -13,7 +13,10 @@ import {
   getShortcutManager,
 } from "./main/shortcuts/shortcut-manager";
 import { registerIpcHandlers } from "./main/ipc/register-ipc-handlers";
-import { runQuickTranslatePipeline } from "./main/quick-translate-flow";
+import {
+  runQuickTranslatePipeline,
+  runQuickTranslateReplacePipeline,
+} from "./main/quick-translate-flow";
 import { shouldSuppressMainOnActivate } from "./main/activate-guard";
 import { setAppQuitting } from "./main/app-quit-state";
 
@@ -60,6 +63,7 @@ app.whenReady().then(() => {
 
   wm.createMainWindow();
   wm.createQuickWindow();
+  wm.createLoadingWindow();
 
   if (usesMenuBarTray) {
     createTray();
@@ -71,12 +75,15 @@ app.whenReady().then(() => {
   const quickTranslate = () => {
     void runQuickTranslatePipeline();
   };
+  const quickTranslateReplace = () => {
+    void runQuickTranslateReplacePipeline();
+  };
 
   // Allow tray to trigger quick translate
   appBus.on("quick-translate-trigger", quickTranslate);
 
-  registerIpcHandlers({ toggleApp, quickTranslate });
-  registerDefaultShortcuts(s, { toggleApp, quickTranslate });
+  registerIpcHandlers({ toggleApp, quickTranslate, quickTranslateReplace });
+  registerDefaultShortcuts(s, { toggleApp, quickTranslate, quickTranslateReplace });
 
   const startHiddenToTray = usesMenuBarTray && s.startMinimized;
   if (!startHiddenToTray) {

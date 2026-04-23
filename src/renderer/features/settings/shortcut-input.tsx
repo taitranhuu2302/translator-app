@@ -9,7 +9,10 @@ import { formatAcceleratorParts } from "../../lib/format-shortcut";
 import { bridge } from "../../lib/bridge";
 interface ShortcutInputProps {
   label: string;
-  settingKey: "quickTranslateShortcut" | "toggleAppShortcut";
+  settingKey:
+    | "quickTranslateShortcut"
+    | "quickTranslateReplaceShortcut"
+    | "toggleAppShortcut";
   currentValue: string;
 }
 
