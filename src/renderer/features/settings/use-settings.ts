@@ -54,7 +54,8 @@ type UpdateShortcutVars = {
   key:
     | 'quickTranslateShortcut'
     | 'quickTranslateReplaceShortcut'
-    | 'toggleAppShortcut';
+    | 'toggleAppShortcut'
+    | 'voiceTextShortcut';
   value: string;
 };
 

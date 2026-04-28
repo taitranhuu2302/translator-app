@@ -51,6 +51,8 @@ export const PUSH = {
   QUICK_LOADING: "quick:loading",
   QUICK_SHOW: "quick:show",
   QUICK_ERROR: "quick:error",
+  VOICE_SPEAK: "voice:speak",
+  VOICE_ERROR: "voice:error",
 } as const;
 
 // ─── Typed IPC map ────────────────────────────────────────────────────────────
@@ -94,7 +96,8 @@ export interface IpcInvokeMap {
         key:
           | "quickTranslateShortcut"
           | "quickTranslateReplaceShortcut"
-          | "toggleAppShortcut";
+          | "toggleAppShortcut"
+          | "voiceTextShortcut";
         value: string;
       },
     ];
@@ -123,4 +126,6 @@ export interface IpcPushMap {
   [PUSH.QUICK_LOADING]: void;
   [PUSH.QUICK_SHOW]: QuickTranslatePayload;
   [PUSH.QUICK_ERROR]: string;
+  [PUSH.VOICE_SPEAK]: { text: string };
+  [PUSH.VOICE_ERROR]: string;
 }

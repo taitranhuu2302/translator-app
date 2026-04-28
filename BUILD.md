@@ -85,6 +85,50 @@ npm run make -- --platform=linux
 
 **Thư mục output:** `out/make/` (và có thể có `out/` cho bước package trung gian).
 
+### Build macOS có quyền hệ thống
+
+Để bản build macOS hiển thị prompt quyền đúng cách cho Automation / Microphone, dự án đã cấu hình:
+
+- `appBundleId` cố định trong `forge.config.ts`
+- `extendInfo` với:
+  - `NSAppleEventsUsageDescription`
+  - `NSMicrophoneUsageDescription`
+- `osxSign.hardenedRuntime = true`
+- entitlement Apple Events trong `entitlements.plist`
+
+#### Biến môi trường notarization
+
+Nếu muốn **sign + notarize** bản macOS, set các biến môi trường sau trên máy Mac:
+
+```bash
+export APPLE_ID="your-apple-id@example.com"
+export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+export APPLE_TEAM_ID="YOURTEAMID"
+```
+
+Sau đó chạy:
+
+```bash
+npm run make -- --platform=darwin
+```
+
+Nếu **không** set 3 biến trên, Forge vẫn dùng cấu hình signing/Info.plist/entitlements, nhưng sẽ bỏ qua bước notarization.
+
+#### Người dùng vẫn phải cấp quyền thủ công
+
+Lưu ý: macOS **không cho phép** app tự cấp sẵn quyền `Accessibility` hoặc `Automation` khi cài đặt. App chỉ có thể:
+
+- kích hoạt prompt hệ thống,
+- hướng dẫn người dùng,
+- mở đúng trang trong `System Settings > Privacy & Security`.
+
+Người dùng vẫn cần tự bật quyền cho app trong:
+
+- `Accessibility`
+- `Automation`
+
+Microphone sẽ hiện prompt chuẩn của macOS khi tính năng liên quan được dùng.
+
 ### 3. `publish` — đẩy bản release (tùy cấu hình)
 
 ```bash

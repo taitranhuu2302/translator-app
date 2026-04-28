@@ -12,7 +12,8 @@ interface ShortcutInputProps {
   settingKey:
     | "quickTranslateShortcut"
     | "quickTranslateReplaceShortcut"
-    | "toggleAppShortcut";
+    | "toggleAppShortcut"
+    | "voiceTextShortcut";
   currentValue: string;
 }
 

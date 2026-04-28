@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Bot, Database, Keyboard, Languages, Settings2 } from "lucide-react";
+import { Bot, Database, Keyboard, Languages, Settings2, Volume2 } from "lucide-react";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { useSettings } from "./use-settings";
 import { TranslationSection } from "./translation-section";
@@ -7,9 +7,16 @@ import { AiSection } from "./ai-section";
 import { ShortcutsSection } from "./shortcuts-section";
 import { BehaviorSection } from "./behavior-section";
 import { DataSection } from "./data-section";
+import { VoiceSection } from "./voice-section";
 import { cn } from "../../../lib/utils";
 
-type SettingsSection = "translation" | "ai" | "shortcuts" | "behavior" | "data";
+type SettingsSection =
+  | "translation"
+  | "ai"
+  | "shortcuts"
+  | "voice"
+  | "behavior"
+  | "data";
 
 const NAV_ITEMS: {
   id: SettingsSection;
@@ -19,6 +26,7 @@ const NAV_ITEMS: {
   { id: "translation", label: "Translation", icon: Languages },
   { id: "ai", label: "AI & Models", icon: Bot },
   { id: "shortcuts", label: "Shortcuts", icon: Keyboard },
+  { id: "voice", label: "Voice", icon: Volume2 },
   { id: "behavior", label: "Behavior", icon: Settings2 },
   { id: "data", label: "Data", icon: Database },
 ];
@@ -27,6 +35,7 @@ const SECTION_COMPONENTS: Record<SettingsSection, React.ComponentType> = {
   translation: TranslationSection,
   ai: AiSection,
   shortcuts: ShortcutsSection,
+  voice: VoiceSection,
   behavior: BehaviorSection,
   data: DataSection,
 };

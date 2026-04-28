@@ -164,8 +164,16 @@ export function TranslatePage() {
 
   const { mutateAsync: translate, isPending } = useTranslate();
 
-  const ttsInput = useTTS();
-  const ttsOutput = useTTS();
+  const ttsConfig = settings
+    ? {
+        voiceURI: settings.ttsVoiceURI,
+        rate: settings.ttsRate,
+        pitch: settings.ttsPitch,
+        volume: settings.ttsVolume,
+      }
+    : undefined;
+  const ttsInput = useTTS(ttsConfig);
+  const ttsOutput = useTTS(ttsConfig);
   // TODO: STT (Speech-to-Text) via Web Speech API is temporarily disabled.
   // SpeechRecognition audio upload causes ERR_FAILED (-2) in Electron due to
   // Chromium permission pipe issues. Re-enable useSTT() once resolved.

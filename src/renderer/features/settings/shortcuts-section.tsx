@@ -74,6 +74,12 @@ export function ShortcutsSection() {
             settingKey="toggleAppShortcut"
             currentValue={settings.toggleAppShortcut}
           />
+          <Separator />
+          <ShortcutInput
+            label="Voice Selected Text"
+            settingKey="voiceTextShortcut"
+            currentValue={settings.voiceTextShortcut}
+          />
         </CardContent>
       </Card>
 

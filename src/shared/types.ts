@@ -110,17 +110,23 @@ export interface AppSettings {
   quickTranslateShortcut: string;
   quickTranslateReplaceShortcut: string;
   toggleAppShortcut: string;
+  voiceTextShortcut: string;
   // Behavior
   autoCopyDelayMs: number;
   restoreClipboard: boolean;
   popupAlwaysOnTop: boolean;
   startMinimized: boolean;
+  // Voice (Text-to-Speech)
+  ttsVoiceURI: string; // empty = auto pick by language
+  ttsRate: number; // 0.1 - 10 (Web Speech API), UI clamps to a sensible range
+  ttsPitch: number; // 0 - 2
+  ttsVolume: number; // 0 - 1
   // Data
   maxHistoryItems: number; // 0 = unlimited
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 3,
+  version: 5,
   translationMode: "manual",
   manualDirection: "vi-en",
   quickTargetLanguage: "vi",
@@ -131,13 +137,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiGeminiApiKey: "",
   aiGeminiModel: "gemini-2.0-flash",
   improveOutputLang: "en",
-  quickTranslateShortcut: "CommandOrControl+Alt+T",
-  quickTranslateReplaceShortcut: "Shift+Alt+T",
-  toggleAppShortcut: "CommandOrControl+Shift+Space",
+  quickTranslateShortcut: "CommandOrControl+Alt+Q",
+  toggleAppShortcut: "CommandOrControl+Alt+E",
+  quickTranslateReplaceShortcut: "CommandOrControl+Alt+R",
+  voiceTextShortcut: "CommandOrControl+Alt+D",
   autoCopyDelayMs: 200,
   restoreClipboard: true,
   popupAlwaysOnTop: true,
   startMinimized: false,
+  ttsVoiceURI: "",
+  ttsRate: 1,
+  ttsPitch: 1,
+  ttsVolume: 1,
   maxHistoryItems: 500,
 };
 

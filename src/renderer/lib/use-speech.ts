@@ -27,8 +27,24 @@ function pickVoice(bcp47: string): SpeechSynthesisVoice | undefined {
 // TTS — Text to Speech (Web Speech API: SpeechSynthesis)
 // ---------------------------------------------------------------------------
 
-export function useTTS() {
+type TTSConfig = {
+  voiceURI?: string; // empty/undefined = auto
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+};
+
+function pickVoiceByURI(voiceURI: string): SpeechSynthesisVoice | undefined {
+  if (!voiceURI) return undefined;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return undefined;
+  return voices.find((v) => v.voiceURI === voiceURI);
+}
+
+export function useTTS(config?: TTSConfig) {
   const [speaking, setSpeaking] = useState(false);
+  const configRef = useRef<TTSConfig | undefined>(config);
+  configRef.current = config;
 
   useEffect(() => {
     return () => {
@@ -45,8 +61,14 @@ export function useTTS() {
 
     // Voices may not be loaded yet on first call — wait for voiceschanged then speak
     const doSpeak = () => {
-      const voice = pickVoice(bcp47);
+      const cfg = configRef.current;
+      const voice =
+        (cfg?.voiceURI ? pickVoiceByURI(cfg.voiceURI) : undefined) ??
+        pickVoice(bcp47);
       if (voice) utterance.voice = voice;
+      if (typeof cfg?.rate === "number") utterance.rate = cfg.rate;
+      if (typeof cfg?.pitch === "number") utterance.pitch = cfg.pitch;
+      if (typeof cfg?.volume === "number") utterance.volume = cfg.volume;
       utterance.onstart = () => setSpeaking(true);
       utterance.onend = () => setSpeaking(false);
       utterance.onerror = () => setSpeaking(false);

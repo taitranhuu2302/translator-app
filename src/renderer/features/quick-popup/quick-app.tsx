@@ -6,6 +6,7 @@ import { bridge } from "../../lib/bridge";
 import { showError } from "../../lib/toast";
 import { useQuickClose } from "./use-quick-popup";
 import { useTTS } from "../../lib/use-speech";
+import { useSettings } from "../settings/use-settings";
 import type { QuickTranslatePayload } from "../../../shared/types";
 
 type State =
@@ -19,7 +20,17 @@ export function QuickApp() {
   const [showCopiedTip, setShowCopiedTip] = useState(false);
   const [openPermissionPending, setOpenPermissionPending] = useState(false);
   const { mutate: close } = useQuickClose();
-  const tts = useTTS();
+  const { data: settings } = useSettings();
+  const tts = useTTS(
+    settings
+      ? {
+          voiceURI: settings.ttsVoiceURI,
+          rate: settings.ttsRate,
+          pitch: settings.ttsPitch,
+          volume: settings.ttsVolume,
+        }
+      : undefined,
+  );
 
   useHotkeys([{ hotkey: "Escape", callback: () => handleClose() }]);
 

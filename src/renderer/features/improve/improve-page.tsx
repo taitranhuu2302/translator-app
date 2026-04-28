@@ -42,14 +42,21 @@ function ResultCard({
   text,
   outputLang,
   badgeLabel,
+  ttsConfig,
 }: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   text: string;
   outputLang: string;
   badgeLabel?: string;
+  ttsConfig?: {
+    voiceURI?: string;
+    rate?: number;
+    pitch?: number;
+    volume?: number;
+  };
 }) {
-  const tts = useTTS();
+  const tts = useTTS(ttsConfig);
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -275,6 +282,14 @@ export function ImprovePage() {
   const [showSidebar, setShowSidebar] = useState(false);
 
   const outputLang = settings?.improveOutputLang ?? "en";
+  const ttsConfig = settings
+    ? {
+        voiceURI: settings.ttsVoiceURI,
+        rate: settings.ttsRate,
+        pitch: settings.ttsPitch,
+        volume: settings.ttsVolume,
+      }
+    : undefined;
 
   async function handleImprove() {
     if (!input.trim()) {
@@ -379,6 +394,7 @@ export function ImprovePage() {
                   icon={Check}
                   text={result.corrected}
                   outputLang={outputLang}
+                  ttsConfig={ttsConfig}
                 />
                 <ResultCard
                   label="Suggestion"
@@ -386,6 +402,7 @@ export function ImprovePage() {
                   text={result.suggestion}
                   outputLang={outputLang}
                   badgeLabel="more elegant"
+                  ttsConfig={ttsConfig}
                 />
                 <ProviderBadge result={result} />
               </>

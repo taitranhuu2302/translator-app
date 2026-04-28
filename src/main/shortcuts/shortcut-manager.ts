@@ -10,6 +10,7 @@ export interface RegisteredShortcuts {
   toggleApp: string;
   quickTranslate: string;
   quickTranslateReplace: string;
+  voiceText: string;
 }
 
 class ShortcutManager {
@@ -45,7 +46,7 @@ class ShortcutManager {
   }
 
   register(
-    role: 'toggleApp' | 'quickTranslate' | 'quickTranslateReplace',
+    role: 'toggleApp' | 'quickTranslate' | 'quickTranslateReplace' | 'voiceText',
     accelerator: string,
     handler: ShortcutHandler,
   ): boolean {
@@ -70,7 +71,7 @@ class ShortcutManager {
   }
 
   updateShortcut(
-    role: 'toggleApp' | 'quickTranslate' | 'quickTranslateReplace',
+    role: 'toggleApp' | 'quickTranslate' | 'quickTranslateReplace' | 'voiceText',
     newAccelerator: string,
     handler: ShortcutHandler,
   ): { success: boolean; error?: string } {
@@ -121,7 +122,8 @@ class ShortcutManager {
     const toggleApp = this.getAcceleratorForRole('toggleApp') ?? '';
     const quickTranslate = this.getAcceleratorForRole('quickTranslate') ?? '';
     const quickTranslateReplace = this.getAcceleratorForRole('quickTranslateReplace') ?? '';
-    return { toggleApp, quickTranslate, quickTranslateReplace };
+    const voiceText = this.getAcceleratorForRole('voiceText') ?? '';
+    return { toggleApp, quickTranslate, quickTranslateReplace, voiceText };
   }
 }
 
@@ -138,6 +140,7 @@ export function registerDefaultShortcuts(
     toggleApp: ShortcutHandler;
     quickTranslate: ShortcutHandler;
     quickTranslateReplace: ShortcutHandler;
+    voiceText: ShortcutHandler;
   },
 ): void {
   const sm = getShortcutManager();
@@ -148,4 +151,5 @@ export function registerDefaultShortcuts(
     settings.quickTranslateReplaceShortcut,
     handlers.quickTranslateReplace,
   );
+  sm.register('voiceText', settings.voiceTextShortcut, handlers.voiceText);
 }

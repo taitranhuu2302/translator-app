@@ -44,6 +44,7 @@ export function registerIpcHandlers(handlers: {
   toggleApp: () => void;
   quickTranslate: () => void;
   quickTranslateReplace: () => void;
+  voiceText: () => void;
 }): void {
   const settings = getSettingsStore();
   const provider = getTranslationProvider();
@@ -76,6 +77,7 @@ export function registerIpcHandlers(handlers: {
         quickTranslateReplaceShortcut:
           DEFAULT_SETTINGS.quickTranslateReplaceShortcut,
         toggleAppShortcut: DEFAULT_SETTINGS.toggleAppShortcut,
+        voiceTextShortcut: DEFAULT_SETTINGS.voiceTextShortcut,
       };
 
       // Re-register with defaults
@@ -94,13 +96,19 @@ export function registerIpcHandlers(handlers: {
         resetPatch.toggleAppShortcut!,
         handlers.toggleApp,
       );
+      const result4 = sm.updateShortcut(
+        "voiceText",
+        resetPatch.voiceTextShortcut!,
+        handlers.voiceText,
+      );
 
-      if (!result1.success || !result2.success || !result3.success) {
+      if (!result1.success || !result2.success || !result3.success || !result4.success) {
         return err(
           "SHORTCUT_REGISTER_FAILED",
           result1.error ??
             result2.error ??
             result3.error ??
+            result4.error ??
             "Could not register default shortcuts",
         );
       }
@@ -122,16 +130,6 @@ export function registerIpcHandlers(handlers: {
       }
       try {
         const result = await provider.translate(request);
-        await addHistory(
-          {
-            type: "translate",
-            input: request.text,
-            output: result.translation,
-            langFrom: request.source,
-            langTo: request.target,
-          },
-          settings.get().maxHistoryItems,
-        );
         return ok(result);
       } catch (error) {
         return normalizeTranslationError(error);
@@ -248,7 +246,8 @@ export function registerIpcHandlers(handlers: {
         key:
           | "quickTranslateShortcut"
           | "quickTranslateReplaceShortcut"
-          | "toggleAppShortcut";
+          | "toggleAppShortcut"
+          | "voiceTextShortcut";
         value: string;
       },
     ) => {
@@ -256,12 +255,16 @@ export function registerIpcHandlers(handlers: {
         ? "quickTranslate"
         : key === "quickTranslateReplaceShortcut"
           ? "quickTranslateReplace"
-          : "toggleApp";
+          : key === "toggleAppShortcut"
+            ? "toggleApp"
+            : "voiceText";
       const handler = role === "quickTranslate"
         ? handlers.quickTranslate
         : role === "quickTranslateReplace"
           ? handlers.quickTranslateReplace
-          : handlers.toggleApp;
+          : role === "toggleApp"
+            ? handlers.toggleApp
+            : handlers.voiceText;
 
       const result = sm.updateShortcut(role, value, handler);
       if (!result.success) {
@@ -289,7 +292,7 @@ export function registerIpcHandlers(handlers: {
   });
 
   ipcMain.handle(IPC.APP_TOGGLE, () => {
-    wm.toggleMain();
+    wm.toggleMainFromShortcut();
   });
 
   // ── Clipboard ─────────────────────────────────────────────────────────────

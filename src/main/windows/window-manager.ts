@@ -257,6 +257,29 @@ class WindowManager {
   }
 
   /**
+   * UX for the "toggle app" shortcut:
+   * - If the window is hidden to tray or minimized: always show/restore.
+   * - If it's visible but not focused (background): bring it to front (don't hide).
+   * - Only hide when it's already visible + focused.
+   */
+  toggleMainFromShortcut(): void {
+    const w = this.mainWindow;
+    if (!w || w.isDestroyed()) return;
+
+    if (!w.isVisible() || w.isMinimized()) {
+      this.showMain();
+      return;
+    }
+
+    if (!w.isFocused()) {
+      this.showMain();
+      return;
+    }
+
+    this.hideMain();
+  }
+
+  /**
    * Show the quick panel without stealing focus from the app that had text selected
    * (critical so global shortcut + simulated Cmd+C target the correct window).
    */
