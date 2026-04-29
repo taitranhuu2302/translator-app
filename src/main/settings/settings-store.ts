@@ -4,7 +4,7 @@ import path from "node:path";
 import { AppSettings, DEFAULT_SETTINGS } from "../../shared/types";
 
 const SETTINGS_FILE = "settings.json";
-const CURRENT_VERSION = 5;
+const CURRENT_VERSION = 6;
 
 function getSettingsPath(): string {
   return path.join(app.getPath("userData"), SETTINGS_FILE);

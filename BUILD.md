@@ -137,6 +137,34 @@ npm run publish
 
 Chỉ dùng khi đã cấu hình publisher trong Forge (token, bucket, v.v.). Mặc định có thể chưa dùng được nếu chưa setup.
 
+### Release để auto-update hoạt động
+
+Để auto-update nhìn thấy version mới:
+
+1. tăng `version` trong `package.json` (ví dụ `1.0.0` -> `1.0.1`)
+2. chạy:
+
+```bash
+npm run publish
+```
+
+hoặc:
+
+```bash
+electron-forge publish
+```
+
+Lưu ý:
+
+- `update-electron-app` + `update.electronjs.org` yêu cầu **GitHub Releases public**
+- release phải là **published release**, không phải `draft`
+- release không được đánh dấu `prerelease`
+
+Nếu repo/release là private, cần chuyển sang:
+
+- custom update feed/static storage, hoặc
+- `electron-updater` / giải pháp khác
+
 ---
 
 ## Thông tin từ `forge.config.ts`

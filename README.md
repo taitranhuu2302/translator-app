@@ -26,6 +26,9 @@ Shortcuts are validated before saving and automatically rolled back if registrat
 ### System Tray
 The app minimizes to the system tray instead of quitting. Right-click the tray icon to **Show/Hide**, **Quick Translate**, **Settings**, or **Quit**.
 
+### Auto Update
+Packaged Windows and macOS builds automatically check GitHub Releases for updates. When a newer version finishes downloading, the app asks whether to **Restart Now** or **Later**.
+
 ### Other Settings
 - **Auto-copy delay** — increase if text capture is unreliable on your machine
 - **Restore clipboard** — restore original clipboard contents after capture
@@ -97,9 +100,13 @@ npm run lint        # lint
 npm test            # run unit tests
 
 npm run make        # build installer for the current OS
+npm run publish     # publish release artifacts
 ```
 
 Artifacts are output to `out/make/` (ZIP on macOS, Squirrel installer on Windows, deb/rpm on Linux).
+
+To release an update, bump the `version` in `package.json`, then run `npm run publish`.
+Auto-update via `update-electron-app` requires public GitHub Releases. If you move to private releases later, switch to a custom update feed.
 
 ---
 

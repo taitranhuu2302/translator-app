@@ -55,7 +55,7 @@ const config: ForgeConfig = {
         name: "translator-app",
       },
       prerelease: false,
-      draft: true,
+      draft: false,
       generateReleaseNotes: true,
     }),
   ],

@@ -20,6 +20,8 @@ import {
 import { runVoiceTextPipeline } from "./main/voice-text-flow";
 import { shouldSuppressMainOnActivate } from "./main/activate-guard";
 import { setAppQuitting } from "./main/app-quit-state";
+import { initAutoUpdater } from "./main/updater/app-updater";
+import { applyAutoLaunchOnSystemStart } from "./main/startup/auto-launch";
 
 if (started) app.quit();
 
@@ -61,6 +63,7 @@ app.whenReady().then(() => {
   const settings = getSettingsStore();
   const s = settings.get();
   const wm = getWindowManager();
+  applyAutoLaunchOnSystemStart(s.autoLaunchOnSystemStart);
 
   wm.createMainWindow();
   wm.createQuickWindow();
@@ -88,6 +91,7 @@ app.whenReady().then(() => {
 
   registerIpcHandlers({ toggleApp, quickTranslate, quickTranslateReplace, voiceText });
   registerDefaultShortcuts(s, { toggleApp, quickTranslate, quickTranslateReplace, voiceText });
+  initAutoUpdater();
 
   const startHiddenToTray = usesMenuBarTray && s.startMinimized;
   if (!startHiddenToTray) {

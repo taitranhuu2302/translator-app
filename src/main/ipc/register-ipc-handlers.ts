@@ -28,6 +28,7 @@ import {
   ensureQuickTranslatePermissions,
   openMacPrivacySettings,
 } from "../permissions/macos-permissions";
+import { applyAutoLaunchOnSystemStart } from "../startup/auto-launch";
 
 function normalizeTranslationError(error: unknown): ReturnType<typeof err> {
   const msg = error instanceof Error ? error.message : String(error);
@@ -62,6 +63,9 @@ export function registerIpcHandlers(handlers: {
       const updated = settings.update(patch);
       if (patch.popupAlwaysOnTop !== undefined) {
         wm.setQuickAlwaysOnTop(patch.popupAlwaysOnTop);
+      }
+      if (patch.autoLaunchOnSystemStart !== undefined) {
+        applyAutoLaunchOnSystemStart(patch.autoLaunchOnSystemStart);
       }
       return ok(updated);
     } catch (error) {

@@ -116,6 +116,7 @@ export interface AppSettings {
   restoreClipboard: boolean;
   popupAlwaysOnTop: boolean;
   startMinimized: boolean;
+  autoLaunchOnSystemStart: boolean;
   // Voice (Text-to-Speech)
   ttsVoiceURI: string; // empty = auto pick by language
   ttsRate: number; // 0.1 - 10 (Web Speech API), UI clamps to a sensible range
@@ -126,7 +127,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 5,
+  version: 6,
   translationMode: "manual",
   manualDirection: "vi-en",
   quickTargetLanguage: "vi",
@@ -145,6 +146,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   restoreClipboard: true,
   popupAlwaysOnTop: true,
   startMinimized: false,
+  autoLaunchOnSystemStart: false,
   ttsVoiceURI: "",
   ttsRate: 1,
   ttsPitch: 1,
