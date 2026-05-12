@@ -17,7 +17,12 @@ import {
   getShortcutManager,
   registerDefaultShortcuts,
 } from "../shortcuts/shortcut-manager";
-import { runImprove, listGroqModels, listGeminiModels } from "../ai/ai-service";
+import {
+  runImprove,
+  listGroqModels,
+  listGeminiModels,
+  runAiTranslate,
+} from "../ai/ai-service";
 import {
   addHistory,
   listHistory,
@@ -214,7 +219,7 @@ export function registerIpcHandlers(handlers: {
         return err("EMPTY_TEXT", "Text is empty");
       }
       try {
-        const result = await provider.translate(request);
+        const result = await runAiTranslate(request, settings.get());
         return ok(result);
       } catch (error) {
         return normalizeTranslationError(error);

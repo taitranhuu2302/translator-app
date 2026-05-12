@@ -154,4 +154,29 @@ describe("GoogleTranslateProvider", () => {
       provider.translate({ source: "vi", target: "en", text: "test" }),
     ).rejects.toThrow("NETWORK_ERROR");
   });
+
+  it("times out if googletrans does not resolve in time", async () => {
+    vi.useFakeTimers();
+    try {
+      mockTranslate.mockImplementation(
+        () => new Promise(() => undefined) as Promise<never>,
+      );
+
+      const { GoogleTranslateProvider } =
+        await import("../main/translation/google-translate-provider");
+      const provider = new GoogleTranslateProvider();
+
+      const pending = provider.translate({
+        source: "vi",
+        target: "en",
+        text: "test",
+      });
+      const assertion = expect(pending).rejects.toThrow("TIMEOUT");
+
+      await vi.advanceTimersByTimeAsync(30000);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

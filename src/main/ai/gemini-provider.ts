@@ -4,9 +4,16 @@ import type {
   ImproveRequest,
   ImproveResult,
   AiModelOption,
+  TranslationRequest,
+  TranslationResult,
 } from "../../shared/types";
 import { GEMINI_FALLBACK_MODELS } from "./model-defaults";
-import { buildImproveSystemPrompt, buildImproveUserPrompt } from "./prompts";
+import {
+  buildImproveSystemPrompt,
+  buildImproveUserPrompt,
+  buildTranslateSystemPrompt,
+  buildTranslateUserPrompt,
+} from "./prompts";
 import { parseImproveOutput } from "./groq-provider";
 
 export class GeminiProvider implements AiServiceProvider {
@@ -14,6 +21,38 @@ export class GeminiProvider implements AiServiceProvider {
 
   isConfigured(apiKey: string): boolean {
     return apiKey.trim().length > 0;
+  }
+
+  async translate(
+    req: TranslationRequest,
+    apiKey: string,
+    model: string,
+  ): Promise<TranslationResult> {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model,
+      contents: buildTranslateUserPrompt(req),
+      config: {
+        systemInstruction: buildTranslateSystemPrompt(req),
+        maxOutputTokens: 1024,
+        temperature: 0.2,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+      },
+    });
+
+    const translation = response.text?.trim() ?? "";
+    if (!translation) {
+      throw new Error("API_ERROR: Empty translation response from Gemini");
+    }
+
+    return {
+      translation,
+      sourceText: req.text,
+      source: req.source,
+      target: req.target,
+    };
   }
 
   async improve(

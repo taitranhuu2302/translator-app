@@ -6,8 +6,8 @@ import { getWindowManager } from "./windows/window-manager";
 import { getSelectionCaptureService } from "./selection/selection-capture-service";
 import { getClipboardSnapshotService } from "./selection/clipboard-snapshot-service";
 import { ShellNativeInputAdapter } from "./selection/native-input-adapter";
-import { getTranslationProvider } from "./translation/google-translate-provider";
 import { ensureQuickTranslatePermissions } from "./permissions/macos-permissions";
+import { runAiTranslate } from "./ai/ai-service";
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -64,8 +64,6 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
   await delay(220);
 
   const capture = getSelectionCaptureService();
-  const provider = getTranslationProvider();
-
   let text: string;
   try {
     text = await capture.captureSelectedText({
@@ -82,11 +80,14 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
   }
 
   try {
-    const result = await provider.translate({
-      source: "auto",
-      target: s.quickTargetLanguage,
-      text,
-    });
+    const result = await runAiTranslate(
+      {
+        source: "auto",
+        target: s.quickTargetLanguage,
+        text,
+      },
+      s,
+    );
     wm.hideLoading();
     quickWin.webContents.send(PUSH.QUICK_SHOW, {
       original: text,
@@ -122,7 +123,6 @@ export async function runQuickTranslateReplacePipeline(): Promise<
   wm.showLoading(s.popupAlwaysOnTop);
 
   const capture = getSelectionCaptureService();
-  const provider = getTranslationProvider();
   const clipboardService = getClipboardSnapshotService();
   const nativeInput = new ShellNativeInputAdapter();
 
@@ -155,11 +155,14 @@ export async function runQuickTranslateReplacePipeline(): Promise<
 
   let translatedText: string;
   try {
-    const result = await provider.translate({
-      source: "auto",
-      target: s.quickReplaceTargetLanguage,
-      text: selectedText,
-    });
+    const result = await runAiTranslate(
+      {
+        source: "auto",
+        target: s.quickReplaceTargetLanguage,
+        text: selectedText,
+      },
+      s,
+    );
     translatedText = result.translation;
   } catch (error: unknown) {
     wm.hideLoading();

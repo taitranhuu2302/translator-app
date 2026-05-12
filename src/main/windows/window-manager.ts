@@ -35,6 +35,16 @@ const LOADING_WINDOW_SIZE = { width: 44, height: 44 };
 
 const CURSOR_OFFSET = 12;
 
+function applyFloatingWindowLevel(win: BrowserWindow, alwaysOnTop: boolean): void {
+  if (alwaysOnTop) {
+    win.setAlwaysOnTop(true, "screen-saver");
+    win.moveTop();
+    return;
+  }
+
+  win.setAlwaysOnTop(false);
+}
+
 /** Avoid uncaught exceptions when the native window is torn down between check and hide(). */
 function safeHideBrowserWindow(win: BrowserWindow): void {
   try {
@@ -135,9 +145,11 @@ class WindowManager {
   createQuickWindow(): BrowserWindow {
     this.quickWindow = new BrowserWindow({
       ...QUICK_WINDOW_SIZE,
+      minWidth: 260,
+      minHeight: 180,
       show: false,
       frame: false,
-      resizable: false,
+      resizable: true,
       skipTaskbar: true,
       alwaysOnTop: true,
       transparent: false,
@@ -286,7 +298,7 @@ class WindowManager {
   showQuick(alwaysOnTop: boolean): void {
     const w = this.quickWindow;
     if (!w || w.isDestroyed()) return;
-    w.setAlwaysOnTop(alwaysOnTop);
+    applyFloatingWindowLevel(w, alwaysOnTop);
     const point = screen.getCursorScreenPoint();
     const bounds = w.getBounds();
     const width = bounds.width > 0 ? bounds.width : QUICK_WINDOW_SIZE.width;
@@ -304,7 +316,7 @@ class WindowManager {
   showLoading(alwaysOnTop: boolean): void {
     const w = this.loadingWindow;
     if (!w || w.isDestroyed()) return;
-    w.setAlwaysOnTop(alwaysOnTop);
+    applyFloatingWindowLevel(w, alwaysOnTop);
     const point = screen.getCursorScreenPoint();
     const bounds = w.getBounds();
     const width = bounds.width > 0 ? bounds.width : LOADING_WINDOW_SIZE.width;
@@ -364,7 +376,7 @@ class WindowManager {
   setQuickAlwaysOnTop(value: boolean): void {
     const w = this.quickWindow;
     if (!w || w.isDestroyed()) return;
-    w.setAlwaysOnTop(value);
+    applyFloatingWindowLevel(w, value);
   }
 }
 

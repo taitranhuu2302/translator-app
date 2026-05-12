@@ -6,6 +6,27 @@ import {
 } from "../../shared/types";
 import { TranslationProvider } from "./translation-provider";
 
+const GOOGLE_TRANSLATE_TIMEOUT_MS = 30000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error("TIMEOUT: Translation request timed out"));
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
 }
@@ -156,10 +177,13 @@ export class GoogleTranslateProvider implements TranslationProvider {
     let result: Awaited<ReturnType<typeof googletrans>>;
 
     try {
-      result = await googletrans(request.text, {
-        from: request.source === "auto" ? undefined : request.source,
-        to: request.target,
-      });
+      result = await withTimeout(
+        googletrans(request.text, {
+          from: request.source === "auto" ? undefined : request.source,
+          to: request.target,
+        }),
+        GOOGLE_TRANSLATE_TIMEOUT_MS,
+      );
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       if (msg.toLowerCase().includes("timeout")) {
