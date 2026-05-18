@@ -8,6 +8,10 @@ import { getClipboardSnapshotService } from "./selection/clipboard-snapshot-serv
 import { ShellNativeInputAdapter } from "./selection/native-input-adapter";
 import { ensureQuickTranslatePermissions } from "./permissions/macos-permissions";
 import { runAiTranslate } from "./ai/ai-service";
+import { getTranslationProvider } from "./translation/google-translate-provider";
+import { shouldUseGoogleTranslate } from "./translation/quick-translate-routing";
+
+const googleTranslate = getTranslationProvider();
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -80,14 +84,14 @@ export async function runQuickTranslatePipeline(): Promise<Result<void>> {
   }
 
   try {
-    const result = await runAiTranslate(
-      {
-        source: "auto",
-        target: s.quickTargetLanguage,
-        text,
-      },
-      s,
-    );
+    const request = {
+      source: "auto" as const,
+      target: s.quickTargetLanguage,
+      text,
+    };
+    const result = shouldUseGoogleTranslate(text)
+      ? await googleTranslate.translate(request)
+      : await runAiTranslate(request, s);
     wm.hideLoading();
     quickWin.webContents.send(PUSH.QUICK_SHOW, {
       original: text,
@@ -155,14 +159,14 @@ export async function runQuickTranslateReplacePipeline(): Promise<
 
   let translatedText: string;
   try {
-    const result = await runAiTranslate(
-      {
-        source: "auto",
-        target: s.quickReplaceTargetLanguage,
-        text: selectedText,
-      },
-      s,
-    );
+    const request = {
+      source: "auto" as const,
+      target: s.quickReplaceTargetLanguage,
+      text: selectedText,
+    };
+    const result = shouldUseGoogleTranslate(selectedText)
+      ? await googleTranslate.translate(request)
+      : await runAiTranslate(request, s);
     translatedText = result.translation;
   } catch (error: unknown) {
     wm.hideLoading();

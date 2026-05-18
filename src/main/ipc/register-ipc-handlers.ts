@@ -10,6 +10,7 @@ import {
 } from "../../shared/types";
 import { getSettingsStore } from "../settings/settings-store";
 import { getTranslationProvider } from "../translation/google-translate-provider";
+import { shouldUseGoogleTranslate } from "../translation/quick-translate-routing";
 import { runQuickTranslatePipeline } from "../quick-translate-flow";
 import { suppressMainOnActivateFor } from "../activate-guard";
 import { getWindowManager } from "../windows/window-manager";
@@ -219,7 +220,9 @@ export function registerIpcHandlers(handlers: {
         return err("EMPTY_TEXT", "Text is empty");
       }
       try {
-        const result = await runAiTranslate(request, settings.get());
+        const result = shouldUseGoogleTranslate(request.text)
+          ? await getTranslationProvider().translate(request)
+          : await runAiTranslate(request, settings.get());
         return ok(result);
       } catch (error) {
         return normalizeTranslationError(error);
