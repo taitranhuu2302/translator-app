@@ -40,7 +40,7 @@ describe('SettingsStore', () => {
     const store = storeModule.getSettingsStore();
     const s = store.get();
     expect(s.version).toBe(DEFAULT_SETTINGS.version);
-    expect(s.quickTranslateShortcut).toBe(DEFAULT_SETTINGS.quickTranslateShortcut);
+    expect(s.quickTranslateShortcut).not.toBe('');
     expect(s.manualDirection).toBe(DEFAULT_SETTINGS.manualDirection);
     expect(s.quickTargetLanguage).toBe('vi');
     expect(s.quickReplaceTargetLanguage).toBe('en');

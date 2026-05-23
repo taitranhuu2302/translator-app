@@ -126,23 +126,12 @@ export interface AppSettings {
   maxHistoryItems: number; // 0 = unlimited
 }
 
-const MACOS_SHORTCUT_DEFAULTS = {
-  quickTranslateShortcut: "Shift+Alt+Q",
-  toggleAppShortcut: "Shift+Alt+E",
-  quickTranslateReplaceShortcut: "Shift+Alt+R",
-  voiceTextShortcut: "Shift+Alt+D",
-} as const;
-
-const OTHER_SHORTCUT_DEFAULTS = {
+export const DEFAULT_SHORTCUT_SETTINGS = {
   quickTranslateShortcut: "CommandOrControl+Alt+Q",
   toggleAppShortcut: "CommandOrControl+Alt+E",
   quickTranslateReplaceShortcut: "CommandOrControl+Alt+R",
   voiceTextShortcut: "CommandOrControl+Alt+D",
 } as const;
-
-export const DEFAULT_SHORTCUT_SETTINGS = process.platform === "darwin"
-  ? MACOS_SHORTCUT_DEFAULTS
-  : OTHER_SHORTCUT_DEFAULTS;
 
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 6,
