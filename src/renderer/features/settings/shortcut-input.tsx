@@ -79,8 +79,8 @@ export function ShortcutInput({
               className="flex-1 h-9 font-mono"
               placeholder={
                 bridge.runtime.platform === "darwin"
-                  ? "e.g. Cmd+Alt+T"
-                  : "e.g. Ctrl+Alt+T"
+                  ? "e.g. Shift+Alt+Q"
+                  : "e.g. Ctrl+Alt+Q"
               }
             />
             <Button
