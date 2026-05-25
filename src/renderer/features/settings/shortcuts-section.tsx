@@ -22,6 +22,9 @@ export function ShortcutsSection() {
     useResetShortcuts();
   if (!settings) return null;
 
+  const exampleShortcut = bridge.runtime.platform === "darwin"
+    ? "Shift+Alt+Q"
+    : "CommandOrControl+Alt+Q";
   const swapHotkeyParts = formatAcceleratorParts("CommandOrControl+Shift+S");
 
   return (
@@ -49,7 +52,7 @@ export function ShortcutsSection() {
           <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-x-1">
             <span>Format:</span>
             <KbdGroup className="flex-wrap">
-              {formatAcceleratorParts("CommandOrControl+Alt+T").map((p, i) => (
+              {formatAcceleratorParts(exampleShortcut).map((p, i) => (
                 <React.Fragment key={i}>
                   {i > 0 && <span className="text-muted-foreground/70">+</span>}
                   <Kbd className="font-mono text-[10px]">{p}</Kbd>

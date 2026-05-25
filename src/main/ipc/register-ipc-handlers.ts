@@ -5,10 +5,12 @@ import {
   err,
   TranslationRequest,
   AppSettings,
-  DEFAULT_SETTINGS,
   ImproveRequest,
 } from "../../shared/types";
-import { getSettingsStore } from "../settings/settings-store";
+import {
+  getDefaultSettings,
+  getSettingsStore,
+} from "../settings/settings-store";
 import { getTranslationProvider } from "../translation/google-translate-provider";
 import { shouldUseGoogleTranslate } from "../translation/quick-translate-routing";
 import { runQuickTranslatePipeline } from "../quick-translate-flow";
@@ -81,13 +83,13 @@ export function registerIpcHandlers(handlers: {
 
   ipcMain.handle(IPC.SETTINGS_RESET_SHORTCUTS, () => {
     try {
-      const s = settings.get();
+      const defaultSettings = getDefaultSettings();
       const resetPatch: Partial<AppSettings> = {
-        quickTranslateShortcut: DEFAULT_SETTINGS.quickTranslateShortcut,
+        quickTranslateShortcut: defaultSettings.quickTranslateShortcut,
         quickTranslateReplaceShortcut:
-          DEFAULT_SETTINGS.quickTranslateReplaceShortcut,
-        toggleAppShortcut: DEFAULT_SETTINGS.toggleAppShortcut,
-        voiceTextShortcut: DEFAULT_SETTINGS.voiceTextShortcut,
+          defaultSettings.quickTranslateReplaceShortcut,
+        toggleAppShortcut: defaultSettings.toggleAppShortcut,
+        voiceTextShortcut: defaultSettings.voiceTextShortcut,
       };
 
       // Re-register with defaults

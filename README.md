@@ -10,10 +10,10 @@ A desktop **Vietnamese ↔ English** translation app for Windows, macOS, and Lin
 Type or paste text into the Input field and press **Translate** (or `Ctrl+Enter` / `⌘Enter`) to translate. Swap direction (VI → EN / EN → VI) using the swap button or the `Ctrl+Shift+S` / `⌘⇧S` shortcut. Copy the result instantly with the **Copy** button.
 
 ### Quick Translate (floating popup)
-The core feature: **select any text in any app**, press the global shortcut (default `Ctrl+Alt+T` / `⌘⌥T`) — a small popup appears with the translation instantly, without switching windows. Press `Esc` or click outside to dismiss.
+The core feature: **select any text in any app**, press the global shortcut (default `Ctrl+Alt+Q` / `⌥⇧Q`) — a small popup appears with the translation instantly, without switching windows. Press `Esc` or click outside to dismiss.
 
 ### Quick Translate + Replace
-Select any text in any app, then press the replace shortcut (default `Shift+Alt+T`). The app translates the selected text to your configured quick target language and pastes it back to replace the original selection.
+Select any text in any app, then press the replace shortcut (default `Ctrl+Alt+R` / `⌥⇧R`). The app translates the selected text to your configured quick target language and pastes it back to replace the original selection.
 
 ### Custom Shortcuts
 Both global shortcuts can be changed in **Settings**:
@@ -56,9 +56,10 @@ npm start
 
 | Action | Windows / Linux | macOS |
 |--------|-----------------|-------|
-| Quick Translate | `Ctrl+Alt+T` | `⌘⌥T` |
-| Quick Translate + Replace | `Shift+Alt+T` | `⌥⇧T` |
-| Toggle App Window | `Ctrl+Shift+Space` | `⌘⇧Space` |
+| Quick Translate | `Ctrl+Alt+Q` | `⌥⇧Q` |
+| Quick Translate + Replace | `Ctrl+Alt+R` | `⌥⇧R` |
+| Toggle App Window | `Ctrl+Alt+E` | `⌥⇧E` |
+| Voice To Text | `Ctrl+Alt+D` | `⌥⇧D` |
 | Swap language direction | `Ctrl+Shift+S` | `⌘⇧S` |
 | Translate (in-app) | `Ctrl+Enter` | `⌘↵` |
 | Close Quick popup | `Esc` | `Esc` |

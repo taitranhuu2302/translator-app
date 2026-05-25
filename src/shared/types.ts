@@ -126,6 +126,13 @@ export interface AppSettings {
   maxHistoryItems: number; // 0 = unlimited
 }
 
+export const DEFAULT_SHORTCUT_SETTINGS = {
+  quickTranslateShortcut: "CommandOrControl+Alt+Q",
+  toggleAppShortcut: "CommandOrControl+Alt+E",
+  quickTranslateReplaceShortcut: "CommandOrControl+Alt+R",
+  voiceTextShortcut: "CommandOrControl+Alt+D",
+} as const;
+
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 6,
   translationMode: "manual",
@@ -138,10 +145,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiGeminiApiKey: "",
   aiGeminiModel: "gemini-2.0-flash",
   improveOutputLang: "en",
-  quickTranslateShortcut: "CommandOrControl+Alt+Q",
-  toggleAppShortcut: "CommandOrControl+Alt+E",
-  quickTranslateReplaceShortcut: "CommandOrControl+Alt+R",
-  voiceTextShortcut: "CommandOrControl+Alt+D",
+  quickTranslateShortcut: DEFAULT_SHORTCUT_SETTINGS.quickTranslateShortcut,
+  toggleAppShortcut: DEFAULT_SHORTCUT_SETTINGS.toggleAppShortcut,
+  quickTranslateReplaceShortcut:
+    DEFAULT_SHORTCUT_SETTINGS.quickTranslateReplaceShortcut,
+  voiceTextShortcut: DEFAULT_SHORTCUT_SETTINGS.voiceTextShortcut,
   autoCopyDelayMs: 200,
   restoreClipboard: true,
   popupAlwaysOnTop: true,
