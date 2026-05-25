@@ -102,12 +102,22 @@ type SpeechRecognitionInstance = {
   maxAlternatives: number;
   continuous: boolean;
   onstart: ((ev: Event) => void) | null;
-  onresult: ((ev: SpeechRecognitionEvent) => void) | null;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
   onend: ((ev: Event) => void) | null;
   onerror: ((ev: Event) => void) | null;
   start(): void;
   stop(): void;
   abort(): void;
+};
+
+type SpeechRecognitionAlternativeLike = {
+  transcript?: string;
+};
+
+type SpeechRecognitionResultLike = ArrayLike<SpeechRecognitionAlternativeLike>;
+
+type SpeechRecognitionEventLike = Event & {
+  results: ArrayLike<SpeechRecognitionResultLike>;
 };
 
 declare global {
@@ -148,7 +158,7 @@ export function useSTT(onResult: (text: string) => void) {
       rec.continuous = false;
 
       rec.onstart = () => setListening(true);
-      rec.onresult = (e: SpeechRecognitionEvent) => {
+      rec.onresult = (e: SpeechRecognitionEventLike) => {
         const transcript = e.results[0]?.[0]?.transcript ?? "";
         if (transcript) onResultRef.current(transcript);
       };

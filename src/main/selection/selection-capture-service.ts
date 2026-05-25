@@ -9,6 +9,95 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+interface ClipboardState {
+  text: string;
+  html: string;
+  rtf: string;
+}
+
+function readClipboardState(): ClipboardState {
+  return {
+    text: clipboard.readText(),
+    html: clipboard.readHTML(),
+    rtf: clipboard.readRTF(),
+  };
+}
+
+function decodeHtmlEntity(entity: string): string {
+  switch (entity) {
+    case "&nbsp;":
+      return " ";
+    case "&amp;":
+      return "&";
+    case "&lt;":
+      return "<";
+    case "&gt;":
+      return ">";
+    case "&quot;":
+      return '"';
+    case "&#39;":
+    case "&apos;":
+      return "'";
+    default:
+      return entity;
+  }
+}
+
+function textFromHtml(html: string): string {
+  if (!html) return "";
+
+  const withoutBlocks = html
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(p|div|li|tr|h[1-6])\s*>/gi, "\n")
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ");
+
+  return withoutBlocks
+    .replace(/&(nbsp|amp|lt|gt|quot|#39|apos);/g, (entity) =>
+      decodeHtmlEntity(entity),
+    )
+    .replace(/\r/g, "")
+    .replace(/[\t\f\v ]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function textFromRtf(rtf: string): string {
+  if (!rtf) return "";
+
+  return rtf
+    .replace(/\\par[d]?/g, "\n")
+    .replace(/\\tab/g, "\t")
+    .replace(/\\'[0-9a-fA-F]{2}/g, "")
+    .replace(/\\[a-z]+-?\d* ?/g, "")
+    .replace(/[{}]/g, "")
+    .replace(/\r/g, "")
+    .replace(/[\t\f\v ]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function extractClipboardText(state: ClipboardState, sentinel: string): string {
+  const text = state.text.trim();
+  if (text && text !== sentinel) return text;
+
+  const htmlText = textFromHtml(state.html);
+  if (htmlText) return htmlText;
+
+  return textFromRtf(state.rtf);
+}
+
+function hasClipboardChanged(
+  state: ClipboardState,
+  baseline: ClipboardState,
+  sentinel: string,
+): boolean {
+  if (state.text !== sentinel) return true;
+  return state.html !== baseline.html || state.rtf !== baseline.rtf;
+}
+
 export interface SelectionCaptureOptions {
   delayMs: number;
   restoreClipboard: boolean;
@@ -48,6 +137,7 @@ export class SelectionCaptureService {
     // terminator, so clipboard.readText() would return '' immediately.
     const SENTINEL = `__nextg_sentinel_${Date.now()}_${Math.random().toString(36).slice(2)}__`;
     clipboard.writeText(SENTINEL);
+    const sentinelState = readClipboardState();
 
     try {
       await this.adapter.simulateCopyShortcut();
@@ -68,9 +158,9 @@ export class SelectionCaptureService {
     while (elapsed < MAX_WAIT_MS) {
       await sleep(POLL_INTERVAL_MS);
       elapsed += POLL_INTERVAL_MS;
-      const text = clipboard.readText();
-      if (text !== SENTINEL) {
-        captured = text;
+      const state = readClipboardState();
+      if (hasClipboardChanged(state, sentinelState, SENTINEL)) {
+        captured = extractClipboardText(state, SENTINEL);
         break;
       }
     }
