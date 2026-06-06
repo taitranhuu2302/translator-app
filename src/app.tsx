@@ -105,15 +105,17 @@ function AppContent() {
         </header>
 
         <TabsContent
+          forceMount
           value="translate"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
-          <TranslatePage />
+          <TranslatePage isActive={activeTab === "translate"} />
         </TabsContent>
 
         <TabsContent
+          forceMount
           value="improve"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
           <Suspense fallback={<TabFallback />}>
             <ImprovePage />
@@ -121,8 +123,9 @@ function AppContent() {
         </TabsContent>
 
         <TabsContent
+          forceMount
           value="history"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
           <Suspense fallback={<TabFallback />}>
             <HistoryPage />
@@ -130,8 +133,9 @@ function AppContent() {
         </TabsContent>
 
         <TabsContent
+          forceMount
           value="settings"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
           <Suspense fallback={<TabFallback />}>
             <SettingsPage />

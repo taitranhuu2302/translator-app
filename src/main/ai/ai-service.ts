@@ -155,6 +155,7 @@ export async function runImprove(
 export async function runAiTranslate(
   req: TranslationRequest,
   settings: AppSettings,
+  fallbackToGoogle = true,
 ): Promise<TranslationResult> {
   const {
     aiProvider,
@@ -222,8 +223,13 @@ export async function runAiTranslate(
     throw new Error(
       "API_ERROR: No AI provider is configured. Please add a Groq or Gemini API key in Settings → AI.",
     );
-  } catch {
-    return googleTranslate.translate(req);
+  } catch (firstError) {
+    if (!fallbackToGoogle) throw firstError;
+    try {
+      return await googleTranslate.translate(req);
+    } catch {
+      throw firstError;
+    }
   }
 }
 

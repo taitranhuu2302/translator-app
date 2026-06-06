@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Bot,
   Check,
@@ -311,6 +311,20 @@ export function ImprovePage() {
     }
   }
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const handleFocus = () => el.focus();
+
+    handleFocus();
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
+
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
       {/* Main content */}
@@ -343,7 +357,7 @@ export function ImprovePage() {
               </CardHeader>
               <CardContent className="space-y-2 px-3 pb-3 pt-0">
                 <Textarea
-                  autoFocus
+                  ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}

@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "./components/ui/sonner";
 import { QuickApp } from "./renderer/features/quick-popup/quick-app";
 import "./index.css";
+import { TooltipProvider } from "./components/ui/tooltip";
 
 const queryClient = new QueryClient({
   defaultOptions: { mutations: { retry: 0 } },
@@ -21,7 +22,9 @@ createRoot(container).render(
         enableSystem={false}
         disableTransitionOnChange
       >
-        <QuickApp />
+        <TooltipProvider>
+          <QuickApp />
+        </TooltipProvider>
         <Toaster richColors expand position="top-center" closeButton />
       </ThemeProvider>
     </HotkeysProvider>

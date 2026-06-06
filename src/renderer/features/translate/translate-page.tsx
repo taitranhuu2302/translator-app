@@ -1,15 +1,23 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   Copy,
   Languages,
   Loader2,
+  User,
   Volume2,
   VolumeX,
+  Wand2,
 } from "lucide-react";
 import { useHotkeys } from "@tanstack/react-hotkeys";
 import { Button } from "../../../components/ui/button";
 import { Textarea } from "../../../components/ui/textarea";
+import { Switch } from "../../../components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
 import {
   Card,
   CardContent,
@@ -151,7 +159,7 @@ function formatConfidence(confidence?: number): string | null {
   return `${Math.round(confidence * 100)}%`;
 }
 
-export function TranslatePage() {
+export function TranslatePage({ isActive }: { isActive?: boolean }) {
   const { data: settings } = useSettings();
   const { mutate: updateSettings } = useUpdateSettings();
   const [mode, setMode] = useState<TranslationMode>("manual");
@@ -253,6 +261,26 @@ export function TranslatePage() {
     setShowCopiedTip(false);
   }, [output]);
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const handleFocus = () => el.focus();
+
+    handleFocus();
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
+
+  useEffect(() => {
+    if (isActive) {
+      textareaRef.current?.focus();
+    }
+  }, [isActive]);
+
   useHotkeys([
     {
       hotkey: "Mod+Shift+S",
@@ -285,25 +313,45 @@ export function TranslatePage() {
       {/* Scroll: entire translate UI so nothing is clipped at the window edge */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-3 py-2 sm:px-4 sm:py-3">
         <div className="mx-auto flex w-full max-w-xl flex-col gap-2.5 pb-4">
-          <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-border/80 bg-muted/25 p-1">
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "manual" ? "default" : "ghost"}
-              className="h-7 text-xs"
-              onClick={() => handleModeChange("manual")}
-            >
-              Manual
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={mode === "auto" ? "default" : "ghost"}
-              className="h-7 text-xs"
-              onClick={() => handleModeChange("auto")}
-            >
-              Auto Detect
-            </Button>
+          <div className="flex items-center gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={mode === "manual" ? "secondary" : "ghost"}
+                  className="size-7"
+                  onClick={() => handleModeChange("manual")}
+                >
+                  <User className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Manual translation</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={mode === "auto" ? "secondary" : "ghost"}
+                  className="size-7"
+                  onClick={() => handleModeChange("auto")}
+                >
+                  <Wand2 className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Auto detect language</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <label className="cursor-pointer select-none text-[10px] text-muted-foreground">
+              AI Translation
+            </label>
+            <Switch
+              checked={settings?.useAiTranslation ?? false}
+              onCheckedChange={(v) => updateSettings({ useAiTranslation: v })}
+            />
           </div>
 
           {/* Compact language bar — one row */}
@@ -370,7 +418,7 @@ export function TranslatePage() {
             <CardContent className="space-y-1.5 px-3 pb-2.5 pt-0">
               <div className="relative min-h-18 max-h-[min(28vh,180px)]">
                 <Textarea
-                  autoFocus
+                  ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}

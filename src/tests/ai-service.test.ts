@@ -60,6 +60,7 @@ describe("runAiTranslate", () => {
         manualDirection: "vi-en",
         quickTargetLanguage: "vi",
         quickReplaceTargetLanguage: "en",
+        useAiTranslation: false,
         aiProvider: "groq",
         aiGroqApiKey: "key",
         aiGroqModel: "model-a",
@@ -80,6 +81,7 @@ describe("runAiTranslate", () => {
         ttsPitch: 1,
         ttsVolume: 1,
         maxHistoryItems: 500,
+        trackHistory: true,
       },
     );
 
@@ -111,6 +113,7 @@ describe("runAiTranslate", () => {
         manualDirection: "vi-en",
         quickTargetLanguage: "vi",
         quickReplaceTargetLanguage: "en",
+        useAiTranslation: false,
         aiProvider: "auto",
         aiGroqApiKey: "",
         aiGroqModel: "model-a",
@@ -131,6 +134,7 @@ describe("runAiTranslate", () => {
         ttsPitch: 1,
         ttsVolume: 1,
         maxHistoryItems: 500,
+        trackHistory: true,
       },
     );
 

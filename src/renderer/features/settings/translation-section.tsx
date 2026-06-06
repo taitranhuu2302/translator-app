@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Separator } from "../../../components/ui/separator";
+import { Switch } from "../../../components/ui/switch";
 import { SettingRow } from "./setting-row";
 import { useSettings, useUpdateSettings } from "./use-settings";
 import type {
@@ -140,6 +141,28 @@ export function TranslationSection() {
           </SettingRow>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">AI Translation</CardTitle>
+          <CardDescription className="text-xs">
+            Use AI (Groq or Gemini) instead of Google Translate for the main
+            Translate tab. Requires a configured API key in Settings → AI.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <SettingRow
+            label="Enable AI Translation"
+            description="When enabled, the Translate tab uses AI for translation. When disabled, Google Translate is used."
+          >
+            <Switch
+              checked={settings.useAiTranslation}
+              onCheckedChange={(v) => update({ useAiTranslation: v })}
+            />
+          </SettingRow>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

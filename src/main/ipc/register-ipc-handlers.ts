@@ -141,7 +141,38 @@ export function registerIpcHandlers(handlers: {
         return err("EMPTY_TEXT", "Please enter some text to translate");
       }
       try {
+        const s = settings.get();
+        if (s.useAiTranslation) {
+          const result = await runAiTranslate(request, s, false);
+          if (s.trackHistory) {
+            await addHistory(
+              {
+                type: "translate",
+                input: request.text,
+                output: result.translation,
+                langFrom: result.source,
+                langTo: result.target,
+                provider: "ai",
+              },
+              s.maxHistoryItems,
+            );
+          }
+          return ok(result);
+        }
         const result = await provider.translate(request);
+        if (s.trackHistory) {
+          await addHistory(
+            {
+              type: "translate",
+              input: request.text,
+              output: result.translation,
+              langFrom: result.source,
+              langTo: result.target,
+              provider: "google",
+            },
+            s.maxHistoryItems,
+          );
+        }
         return ok(result);
       } catch (error) {
         return normalizeTranslationError(error);
@@ -158,18 +189,20 @@ export function registerIpcHandlers(handlers: {
     try {
       const s = settings.get();
       const result = await runImprove(request, s);
-      await addHistory(
-        {
-          type: "improve",
-          input: request.text,
-          output: result.corrected,
-          output2: result.suggestion,
-          langFrom: "auto",
-          langTo: request.outputLang,
-          provider: `${result.provider}/${result.model}`,
-        },
-        settings.get().maxHistoryItems,
-      );
+      if (s.trackHistory) {
+        await addHistory(
+          {
+            type: "improve",
+            input: request.text,
+            output: result.corrected,
+            output2: result.suggestion,
+            langFrom: "auto",
+            langTo: request.outputLang,
+            provider: `${result.provider}/${result.model}`,
+          },
+          s.maxHistoryItems,
+        );
+      }
       return ok(result);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);

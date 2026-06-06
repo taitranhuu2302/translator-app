@@ -99,6 +99,7 @@ export interface AppSettings {
   manualDirection: ManualDirection;
   quickTargetLanguage: LanguageCode;
   quickReplaceTargetLanguage: LanguageCode;
+  useAiTranslation: boolean;
   // AI
   aiProvider: AiProvider;
   aiGroqApiKey: string;
@@ -124,6 +125,7 @@ export interface AppSettings {
   ttsVolume: number; // 0 - 1
   // Data
   maxHistoryItems: number; // 0 = unlimited
+  trackHistory: boolean;
 }
 
 export const DEFAULT_SHORTCUT_SETTINGS = {
@@ -139,6 +141,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   manualDirection: "vi-en",
   quickTargetLanguage: "vi",
   quickReplaceTargetLanguage: "en",
+  useAiTranslation: false,
   aiProvider: "auto",
   aiGroqApiKey: "",
   aiGroqModel: "llama-3.3-70b-versatile",
@@ -160,6 +163,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ttsPitch: 1,
   ttsVolume: 1,
   maxHistoryItems: 500,
+  trackHistory: true,
 };
 
 export type AppErrorCode =
