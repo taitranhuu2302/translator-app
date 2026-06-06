@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('electron', () => ({
-  app: { getPath: vi.fn(() => '/tmp/nextg-translate-test') },
+  app: { getPath: vi.fn(() => '/tmp/neris-translator-test') },
 }));
 
 const fsMock = {

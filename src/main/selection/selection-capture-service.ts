@@ -135,7 +135,7 @@ export class SelectionCaptureService {
     // Write sentinel so we can detect a real clipboard change after Ctrl+C.
     // Must NOT use null bytes — Windows CF_UNICODETEXT treats \x00 as string
     // terminator, so clipboard.readText() would return '' immediately.
-    const SENTINEL = `__nextg_sentinel_${Date.now()}_${Math.random().toString(36).slice(2)}__`;
+    const SENTINEL = `__neris_sentinel_${Date.now()}_${Math.random().toString(36).slice(2)}__`;
     clipboard.writeText(SENTINEL);
     const sentinelState = readClipboardState();
 

@@ -1,4 +1,4 @@
-# NextG Translate
+# Neris Translator
 
 A desktop **Vietnamese ↔ English** translation app for Windows, macOS, and Linux — built with Electron + React + TypeScript.
 
@@ -43,7 +43,7 @@ Packaged Windows and macOS builds automatically check GitHub Releases for update
 
 ```bash
 git clone <repo>
-cd nextg-translate
+cd neris-translator
 npm install
 npm start
 ```
@@ -72,7 +72,7 @@ npm start
 Quick Translate simulates `Cmd+C` via AppleScript to read the selected text. macOS requires **Accessibility** access:
 
 1. Open **System Settings → Privacy & Security → Accessibility**
-2. Enable **NextG Translate** (or **Terminal** if running via `npm start`)
+2. Enable **Neris Translator** (or **Terminal** if running via `npm start`)
 
 Without this permission the popup will display a clear error message explaining the issue.
 

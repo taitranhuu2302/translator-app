@@ -16,11 +16,11 @@ function buildMenu(mainVisible: boolean): Menu {
   const wm = getWindowManager();
   return Menu.buildFromTemplate([
     {
-      label: mainVisible ? "Hide NextG Translate" : "Show NextG Translate",
+      label: mainVisible ? "Hide Neris Translator" : "Show Neris Translator",
       click: () => wm.toggleMain(),
     },
     {
-      label: "NextG Translate Now",
+      label: "Neris Translator Now",
       click: () => appBus.emit("quick-translate-trigger"),
     },
     { type: "separator" },
@@ -65,7 +65,7 @@ export function createTray(): void {
   }
 
   tray = new Tray(icon);
-  tray.setToolTip("NextG Translate");
+  tray.setToolTip("Neris Translator");
 
   const wm = getWindowManager();
   const mainWin = wm.getMainWindow();

@@ -23,7 +23,8 @@ export function Providers({ children }: ProvidersProps) {
       <HotkeysProvider>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="dark"
+          forcedTheme="dark"
           enableSystem={false}
           disableTransitionOnChange
         >

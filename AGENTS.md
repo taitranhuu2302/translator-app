@@ -2,7 +2,7 @@
 
 ## Project
 
-Electron desktop app (NextG Translate) — Vietnamese ↔ English translation. Electron Forge + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui.
+Electron desktop app (Neris Translator) — Vietnamese ↔ English translation. Electron Forge + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui.
 
 ## Commands
 

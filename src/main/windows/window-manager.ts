@@ -84,7 +84,7 @@ class WindowManager {
       ...MAIN_WINDOW_SIZE,
       minWidth: 600,
       minHeight: 480,
-      title: "NextG Translate",
+      title: "Neris Translator",
       icon: appIcon,
       show: false,
       autoHideMenuBar: true,

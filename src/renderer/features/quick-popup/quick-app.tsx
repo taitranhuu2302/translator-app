@@ -133,7 +133,7 @@ export function QuickApp() {
       >
         {state.status === "idle" && (
           <div className="flex flex-1 items-center justify-center px-1 text-center text-[11px] leading-relaxed text-muted-foreground">
-            Select text in another app, then press the NextG Translate shortcut.
+            Select text in another app, then press the Neris Translator shortcut.
             Nothing to type here—only the translation appears after.
           </div>
         )}

@@ -1,4 +1,4 @@
-# Hướng dẫn build NextG Translate
+# Hướng dẫn build Neris Translator
 
 Tài liệu này mô tả cách **cài đặt môi trường**, **chạy dev**, và **đóng gói** ứng dụng desktop (Electron Forge + Vite).
 
@@ -51,7 +51,7 @@ Tạo bản **chưa** làm installer, thường dùng để kiểm tra nhanh:
 npm run package
 ```
 
-Kết quả: thư mục app trong `out/` (tên thư mục phụ thuộc Forge; thường dạng `out/nextg-translate-darwin-arm64/` hoặc tương tự theo platform).
+Kết quả: thư mục app trong `out/` (tên thư mục phụ thuộc Forge; thường dạng `out/neris-translator-darwin-arm64/` hoặc tương tự theo platform).
 
 ### 2. `make` — tạo bản cài / nén theo nền tảng
 
@@ -169,7 +169,7 @@ Nếu repo/release là private, cần chuyển sang:
 
 ## Thông tin từ `forge.config.ts`
 
-- **Tên app đóng gói:** `NextGTranslate` (packager `name`), executable `nextg-translate`.
+- **Tên app đóng gói:** `NerisTranslator` (packager `name`), executable `neris-translator`.
 - **ASAR:** bật (`asar: true`).
 - **Hai cửa sổ renderer:** `main_window` (`index.html`), `quick_window` (`index-quick.html`).
 
