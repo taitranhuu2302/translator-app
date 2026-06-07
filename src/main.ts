@@ -66,6 +66,15 @@ app.whenReady().then(() => {
   applyAutoLaunchOnSystemStart(s.autoLaunchOnSystemStart);
 
   wm.createMainWindow();
+
+  // Show the main window immediately so the user sees the splash (logo + animated dots)
+  // while modules load and React hydrates.
+  // backgroundColor: '#181926' on the window prevents any white flash before the splash paints.
+  const startHiddenToTray = usesMenuBarTray && s.startMinimized;
+  if (!startHiddenToTray) {
+    wm.getMainWindow()?.show();
+  }
+
   wm.createQuickWindow();
   wm.createLoadingWindow();
 
@@ -92,11 +101,6 @@ app.whenReady().then(() => {
   registerIpcHandlers({ toggleApp, quickTranslate, quickTranslateReplace, voiceText });
   registerDefaultShortcuts(s, { toggleApp, quickTranslate, quickTranslateReplace, voiceText });
   initAutoUpdater();
-
-  const startHiddenToTray = usesMenuBarTray && s.startMinimized;
-  if (!startHiddenToTray) {
-    wm.showMain();
-  }
 });
 
 app.on("window-all-closed", () => {
