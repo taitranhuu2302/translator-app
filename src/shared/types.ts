@@ -1,6 +1,7 @@
 export type LanguageCode = "vi" | "en";
 export type TranslateSource = "auto" | "vi" | "en";
 export type ManualDirection = "vi-en" | "en-vi";
+export type TranslationMode = "manual" | "auto";
 
 // ─── AI Provider ──────────────────────────────────────────────────────────────
 
@@ -50,18 +51,55 @@ export interface TranslationRequest {
   text: string;
 }
 
+export interface TranslationTermMeaning {
+  term: string;
+  meanings: string[];
+}
+
+export interface TranslationLexicalGroup {
+  partOfSpeech: string;
+  terms: string[];
+  base: string;
+  entries: TranslationTermMeaning[];
+}
+
+export interface TranslationDefinitionItem {
+  definition: string;
+  example?: string;
+}
+
+export interface TranslationDefinitionGroup {
+  partOfSpeech: string;
+  base: string;
+  items: TranslationDefinitionItem[];
+}
+
+export interface TranslationDetails {
+  pronunciation?: string;
+  detectedSource?: string;
+  confidence?: number;
+  correctedText?: string;
+  alternatives: string[];
+  lexicalGroups: TranslationLexicalGroup[];
+  definitionGroups: TranslationDefinitionGroup[];
+}
+
 export interface TranslationResult {
   translation: string;
   sourceText: string;
   source: TranslateSource;
   target: LanguageCode;
+  details?: TranslationDetails;
 }
 
 export interface AppSettings {
   version: number;
   // Translation
+  translationMode: TranslationMode;
   manualDirection: ManualDirection;
   quickTargetLanguage: LanguageCode;
+  quickReplaceTargetLanguage: LanguageCode;
+  useAiTranslation: boolean;
   // AI
   aiProvider: AiProvider;
   aiGroqApiKey: string;
@@ -71,33 +109,61 @@ export interface AppSettings {
   improveOutputLang: LanguageCode;
   // Shortcuts
   quickTranslateShortcut: string;
+  quickTranslateReplaceShortcut: string;
   toggleAppShortcut: string;
+  voiceTextShortcut: string;
   // Behavior
   autoCopyDelayMs: number;
   restoreClipboard: boolean;
   popupAlwaysOnTop: boolean;
   startMinimized: boolean;
+  autoLaunchOnSystemStart: boolean;
+  // Voice (Text-to-Speech)
+  ttsVoiceURI: string; // empty = auto pick by language
+  ttsRate: number; // 0.1 - 10 (Web Speech API), UI clamps to a sensible range
+  ttsPitch: number; // 0 - 2
+  ttsVolume: number; // 0 - 1
   // Data
   maxHistoryItems: number; // 0 = unlimited
+  trackHistory: boolean;
 }
 
+export const DEFAULT_SHORTCUT_SETTINGS = {
+  quickTranslateShortcut: "CommandOrControl+Alt+Q",
+  toggleAppShortcut: "CommandOrControl+Alt+E",
+  quickTranslateReplaceShortcut: "CommandOrControl+Alt+R",
+  voiceTextShortcut: "CommandOrControl+Alt+D",
+} as const;
+
 export const DEFAULT_SETTINGS: AppSettings = {
-  version: 3,
+  version: 6,
+  translationMode: "manual",
   manualDirection: "vi-en",
   quickTargetLanguage: "vi",
+  quickReplaceTargetLanguage: "en",
+  useAiTranslation: false,
   aiProvider: "auto",
   aiGroqApiKey: "",
   aiGroqModel: "llama-3.3-70b-versatile",
   aiGeminiApiKey: "",
   aiGeminiModel: "gemini-2.0-flash",
   improveOutputLang: "en",
-  quickTranslateShortcut: "CommandOrControl+Alt+T",
-  toggleAppShortcut: "CommandOrControl+Shift+Space",
+  quickTranslateShortcut: DEFAULT_SHORTCUT_SETTINGS.quickTranslateShortcut,
+  toggleAppShortcut: DEFAULT_SHORTCUT_SETTINGS.toggleAppShortcut,
+  quickTranslateReplaceShortcut:
+    DEFAULT_SHORTCUT_SETTINGS.quickTranslateReplaceShortcut,
+  voiceTextShortcut: DEFAULT_SHORTCUT_SETTINGS.voiceTextShortcut,
   autoCopyDelayMs: 200,
   restoreClipboard: true,
   popupAlwaysOnTop: true,
   startMinimized: false,
+  autoLaunchOnSystemStart: false,
+  ttsVoiceURI: "",
+  ttsRate: 1,
+  ttsPitch: 1,
+  ttsVolume: 1,
   maxHistoryItems: 500,
+  trackHistory: true,
 };
 
 export type AppErrorCode =

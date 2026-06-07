@@ -55,6 +55,15 @@ describe('ShortcutManager', () => {
     expect(mockGlobalShortcut.register).toHaveBeenCalledWith('CommandOrControl+Alt+T', handler);
   });
 
+  it('registers translate and replace shortcut successfully', async () => {
+    const { getShortcutManager } = await import('../main/shortcuts/shortcut-manager');
+    const sm = getShortcutManager();
+    const handler = vi.fn();
+    const success = sm.register('quickTranslateReplace', 'Shift+Alt+T', handler);
+    expect(success).toBe(true);
+    expect(mockGlobalShortcut.register).toHaveBeenCalledWith('Shift+Alt+T', handler);
+  });
+
   it('detects internal conflict when two roles try same shortcut', async () => {
     const { getShortcutManager } = await import('../main/shortcuts/shortcut-manager');
     const sm = getShortcutManager();

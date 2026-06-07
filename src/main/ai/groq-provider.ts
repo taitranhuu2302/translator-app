@@ -4,15 +4,46 @@ import type {
   ImproveRequest,
   ImproveResult,
   AiModelOption,
+  TranslationRequest,
+  TranslationResult,
 } from "../../shared/types";
 import { GROQ_FALLBACK_MODELS } from "./model-defaults";
-import { buildImproveMessages } from "./prompts";
+import { buildImproveMessages, buildTranslateMessages } from "./prompts";
 
 export class GroqProvider implements AiServiceProvider {
   readonly name = "groq" as const;
 
   isConfigured(apiKey: string): boolean {
     return apiKey.trim().length > 0;
+  }
+
+  async translate(
+    req: TranslationRequest,
+    apiKey: string,
+    model: string,
+  ): Promise<TranslationResult> {
+    const client = new Groq({ apiKey });
+    const messages = buildTranslateMessages(req);
+
+    const completion = await client.chat.completions.create({
+      model,
+      messages,
+      max_tokens: 1024,
+      temperature: 0.2,
+      reasoning_effort: "none",
+    });
+
+    const translation = completion.choices[0]?.message?.content?.trim() ?? "";
+    if (!translation) {
+      throw new Error("API_ERROR: Empty translation response from Groq");
+    }
+
+    return {
+      translation,
+      sourceText: req.text,
+      source: req.source,
+      target: req.target,
+    };
   }
 
   async improve(

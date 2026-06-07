@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Check,
   Copy,
-  Languages,
   RotateCcw,
   Trash2,
   Wand2,
@@ -15,9 +14,7 @@ import { Separator } from "../../../components/ui/separator";
 import { bridge } from "../../lib/bridge";
 import { showError } from "../../lib/toast";
 import { useHistory } from "./use-history";
-import type { HistoryItem, HistoryItemType } from "../../../shared/types";
-
-type FilterType = "all" | HistoryItemType;
+import type { HistoryItem } from "../../../shared/types";
 
 function formatTime(iso: string) {
   const d = new Date(iso);
@@ -69,29 +66,14 @@ function HistoryCard({
   item: HistoryItem;
   onDelete: (id: number) => void;
 }) {
-  const isTranslate = item.type === "translate";
-
   return (
     <div className="rounded-lg border bg-card text-card-foreground p-3 flex flex-col gap-2">
       {/* Header row */}
       <div className="flex items-center gap-2">
-        <Badge
-          variant={isTranslate ? "default" : "secondary"}
-          className="text-[10px] px-1.5 py-0 gap-1 h-4.5"
-        >
-          {isTranslate ? (
-            <Languages className="size-2.5" />
-          ) : (
-            <Wand2 className="size-2.5" />
-          )}
-          {isTranslate ? "Translate" : "Improve"}
+        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 gap-1 h-4.5">
+          <Wand2 className="size-2.5" />
+          Improve
         </Badge>
-
-        {isTranslate && item.langFrom && item.langTo && (
-          <span className="text-[10px] text-muted-foreground">
-            {item.langFrom === "auto" ? "auto" : item.langFrom} → {item.langTo}
-          </span>
-        )}
 
         <span className="ml-auto text-[10px] text-muted-foreground shrink-0">
           {formatTime(item.createdAt)}
@@ -147,60 +129,17 @@ function HistoryCard({
   );
 }
 
-function FilterButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-        active
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 export function HistoryPage() {
-  const [filter, setFilter] = useState<FilterType>("all");
   const { items, isLoading, refetch, clear, isClearPending, deleteItem } =
-    useHistory();
-
-  const filtered =
-    filter === "all" ? items : items.filter((i) => i.type === filter);
+    useHistory({ type: "improve" });
 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Toolbar */}
       <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 border-b">
-        <div className="flex items-center gap-1">
-          <FilterButton
-            active={filter === "all"}
-            onClick={() => setFilter("all")}
-          >
-            All
-          </FilterButton>
-          <FilterButton
-            active={filter === "translate"}
-            onClick={() => setFilter("translate")}
-          >
-            Translate
-          </FilterButton>
-          <FilterButton
-            active={filter === "improve"}
-            onClick={() => setFilter("improve")}
-          >
-            Improve
-          </FilterButton>
+        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <Wand2 className="size-3.5" />
+          <span>Improve History</span>
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
@@ -234,16 +173,16 @@ export function HistoryPage() {
               <Skeleton key={i} className="h-28 w-full rounded-lg" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
             <p className="text-sm">No history yet</p>
             <p className="text-xs">
-              Start translating or improving text to see records here
+              Improve some text to see records here
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filtered.map((item) => (
+            {items.map((item) => (
               <HistoryCard key={item.id} item={item} onDelete={deleteItem} />
             ))}
           </div>

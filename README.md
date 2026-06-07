@@ -1,4 +1,4 @@
-# NextG Translate
+# Neris Translator
 
 A desktop **Vietnamese ↔ English** translation app for Windows, macOS, and Linux — built with Electron + React + TypeScript.
 
@@ -10,17 +10,24 @@ A desktop **Vietnamese ↔ English** translation app for Windows, macOS, and Lin
 Type or paste text into the Input field and press **Translate** (or `Ctrl+Enter` / `⌘Enter`) to translate. Swap direction (VI → EN / EN → VI) using the swap button or the `Ctrl+Shift+S` / `⌘⇧S` shortcut. Copy the result instantly with the **Copy** button.
 
 ### Quick Translate (floating popup)
-The core feature: **select any text in any app**, press the global shortcut (default `Ctrl+Alt+T` / `⌘⌥T`) — a small popup appears with the translation instantly, without switching windows. Press `Esc` or click outside to dismiss.
+The core feature: **select any text in any app**, press the global shortcut (default `Ctrl+Alt+Q` / `⌥⇧Q`) — a small popup appears with the translation instantly, without switching windows. Press `Esc` or click outside to dismiss.
+
+### Quick Translate + Replace
+Select any text in any app, then press the replace shortcut (default `Ctrl+Alt+R` / `⌥⇧R`). The app translates the selected text to your configured quick target language and pastes it back to replace the original selection.
 
 ### Custom Shortcuts
 Both global shortcuts can be changed in **Settings**:
 - **Quick Translate** — shortcut to translate the currently selected text
+- **Quick Translate + Replace** — shortcut to translate and replace the selected text in place
 - **Toggle App Window** — show/hide the main window
 
 Shortcuts are validated before saving and automatically rolled back if registration fails.
 
 ### System Tray
 The app minimizes to the system tray instead of quitting. Right-click the tray icon to **Show/Hide**, **Quick Translate**, **Settings**, or **Quit**.
+
+### Auto Update
+Packaged Windows and macOS builds automatically check GitHub Releases for updates. When a newer version finishes downloading, the app asks whether to **Restart Now** or **Later**.
 
 ### Other Settings
 - **Auto-copy delay** — increase if text capture is unreliable on your machine
@@ -36,7 +43,7 @@ The app minimizes to the system tray instead of quitting. Right-click the tray i
 
 ```bash
 git clone <repo>
-cd nextg-translate
+cd neris-translator
 npm install
 npm start
 ```
@@ -49,8 +56,10 @@ npm start
 
 | Action | Windows / Linux | macOS |
 |--------|-----------------|-------|
-| Quick Translate | `Ctrl+Alt+T` | `⌘⌥T` |
-| Toggle App Window | `Ctrl+Shift+Space` | `⌘⇧Space` |
+| Quick Translate | `Ctrl+Alt+Q` | `⌥⇧Q` |
+| Quick Translate + Replace | `Ctrl+Alt+R` | `⌥⇧R` |
+| Toggle App Window | `Ctrl+Alt+E` | `⌥⇧E` |
+| Voice To Text | `Ctrl+Alt+D` | `⌥⇧D` |
 | Swap language direction | `Ctrl+Shift+S` | `⌘⇧S` |
 | Translate (in-app) | `Ctrl+Enter` | `⌘↵` |
 | Close Quick popup | `Esc` | `Esc` |
@@ -63,7 +72,7 @@ npm start
 Quick Translate simulates `Cmd+C` via AppleScript to read the selected text. macOS requires **Accessibility** access:
 
 1. Open **System Settings → Privacy & Security → Accessibility**
-2. Enable **NextG Translate** (or **Terminal** if running via `npm start`)
+2. Enable **Neris Translator** (or **Terminal** if running via `npm start`)
 
 Without this permission the popup will display a clear error message explaining the issue.
 
@@ -92,9 +101,13 @@ npm run lint        # lint
 npm test            # run unit tests
 
 npm run make        # build installer for the current OS
+npm run publish     # publish release artifacts
 ```
 
 Artifacts are output to `out/make/` (ZIP on macOS, Squirrel installer on Windows, deb/rpm on Linux).
+
+To release an update, bump the `version` in `package.json`, then run `npm run publish`.
+Auto-update via `update-electron-app` requires public GitHub Releases. If you move to private releases later, switch to a custom update feed.
 
 ---
 

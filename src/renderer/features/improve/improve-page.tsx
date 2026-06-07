@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Bot,
   Check,
@@ -42,14 +42,21 @@ function ResultCard({
   text,
   outputLang,
   badgeLabel,
+  ttsConfig,
 }: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   text: string;
   outputLang: string;
   badgeLabel?: string;
+  ttsConfig?: {
+    voiceURI?: string;
+    rate?: number;
+    pitch?: number;
+    volume?: number;
+  };
 }) {
-  const tts = useTTS();
+  const tts = useTTS(ttsConfig);
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -275,6 +282,14 @@ export function ImprovePage() {
   const [showSidebar, setShowSidebar] = useState(false);
 
   const outputLang = settings?.improveOutputLang ?? "en";
+  const ttsConfig = settings
+    ? {
+        voiceURI: settings.ttsVoiceURI,
+        rate: settings.ttsRate,
+        pitch: settings.ttsPitch,
+        volume: settings.ttsVolume,
+      }
+    : undefined;
 
   async function handleImprove() {
     if (!input.trim()) {
@@ -295,6 +310,20 @@ export function ImprovePage() {
       void handleImprove();
     }
   }
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const handleFocus = () => el.focus();
+
+    handleFocus();
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -328,7 +357,7 @@ export function ImprovePage() {
               </CardHeader>
               <CardContent className="space-y-2 px-3 pb-3 pt-0">
                 <Textarea
-                  autoFocus
+                  ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -379,6 +408,7 @@ export function ImprovePage() {
                   icon={Check}
                   text={result.corrected}
                   outputLang={outputLang}
+                  ttsConfig={ttsConfig}
                 />
                 <ResultCard
                   label="Suggestion"
@@ -386,6 +416,7 @@ export function ImprovePage() {
                   text={result.suggestion}
                   outputLang={outputLang}
                   badgeLabel="more elegant"
+                  ttsConfig={ttsConfig}
                 />
                 <ProviderBadge result={result} />
               </>

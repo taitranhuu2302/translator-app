@@ -8,16 +8,37 @@ import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { PublisherGithub } from "@electron-forge/publisher-github";
 import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
+const APP_BUNDLE_ID = "com.taitranhuu2302.neristranslator";
+const APPLE_ID = process.env.APPLE_ID;
+const APPLE_APP_SPECIFIC_PASSWORD = process.env.APPLE_APP_SPECIFIC_PASSWORD;
+const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
+
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    name: "NextGTranslate",
-    executableName: "nextg-translate",
+    name: "NerisTranslator",
+    executableName: "neris-translator",
     icon: "assets/logo",
     extraResource: ["assets"],
+    appBundleId: APP_BUNDLE_ID,
+    ...(APPLE_ID && APPLE_APP_SPECIFIC_PASSWORD && APPLE_TEAM_ID
+      ? {
+          osxNotarize: {
+            appleId: APPLE_ID,
+            appleIdPassword: APPLE_APP_SPECIFIC_PASSWORD,
+            teamId: APPLE_TEAM_ID,
+          },
+        }
+      : {}),
+    extendInfo: {
+      NSAppleEventsUsageDescription:
+        'Neris Translator needs Automation permission to control "System Events" so it can copy selected text from other apps.',
+      NSMicrophoneUsageDescription:
+        "Neris Translator needs microphone access for speech input features.",
+    },
   },
   makers: [
-    new MakerSquirrel({ name: "NextGTranslate" }),
+    new MakerSquirrel({ name: "NerisTranslator" }),
     new MakerZIP({}, ["darwin"]),
     new MakerRpm({}),
     new MakerDeb({}),
@@ -29,7 +50,7 @@ const config: ForgeConfig = {
         name: "translator-app",
       },
       prerelease: false,
-      draft: true,
+      draft: false,
       generateReleaseNotes: true,
     }),
   ],
@@ -55,6 +76,10 @@ const config: ForgeConfig = {
         {
           name: "quick_window",
           config: "vite.renderer.quick.config.ts",
+        },
+        {
+          name: "loading_window",
+          config: "vite.renderer.loading.config.ts",
         },
       ],
     }),

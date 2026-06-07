@@ -1,8 +1,8 @@
 {
-  "name": "nextg-translate",
-  "productName": "NextG Translate",
-  "version": "1.0.0",
-  "description": "Desktop NextG Translate app for Vietnamese <-> English",
+  "name": "neris-translator",
+  "productName": "Neris Translator",
+  "version": "2.0.0",
+  "description": "Desktop Neris Translator — Vietnamese ↔ English translation app",
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
@@ -69,6 +69,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "update-electron-app": "^3.1.2"
   }
 }

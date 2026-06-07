@@ -89,12 +89,31 @@ const api = {
     },
   },
 
+  // ── Voice (TTS shortcuts) ────────────────────────────────────────────────
+  voice: {
+    onSpeak: (cb: (payload: { text: string }) => void): UnsubscribeFn => {
+      const listener = (_: Electron.IpcRendererEvent, p: { text: string }) =>
+        cb(p);
+      ipcRenderer.on(PUSH.VOICE_SPEAK, listener);
+      return () => ipcRenderer.removeListener(PUSH.VOICE_SPEAK, listener);
+    },
+    onError: (cb: (message: string) => void): UnsubscribeFn => {
+      const listener = (_: Electron.IpcRendererEvent, msg: string) => cb(msg);
+      ipcRenderer.on(PUSH.VOICE_ERROR, listener);
+      return () => ipcRenderer.removeListener(PUSH.VOICE_ERROR, listener);
+    },
+  },
+
   // ── Shortcuts ─────────────────────────────────────────────────────────────
   shortcuts: {
     validate: (accelerator: string): Promise<Result<void>> =>
       ipcRenderer.invoke(IPC.SHORTCUT_VALIDATE, accelerator),
     update: (
-      key: "quickTranslateShortcut" | "toggleAppShortcut",
+      key:
+        | "quickTranslateShortcut"
+        | "quickTranslateReplaceShortcut"
+        | "toggleAppShortcut"
+        | "voiceTextShortcut",
       value: string,
     ): Promise<Result<AppSettings>> =>
       ipcRenderer.invoke(IPC.SHORTCUT_UPDATE, { key, value }),

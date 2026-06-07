@@ -60,9 +60,9 @@ function AppContent() {
         <header className="shrink-0 flex items-center gap-3 border-b px-4">
           {/* Branding */}
           <div className="flex items-center gap-1.5 py-2.5 select-none">
-            <img src="logo.png" className="size-8" alt="NextG" />
+            <img src="logo.png" className="size-8" alt="Neris" />
             <span className="text-xs font-semibold tracking-tight text-foreground/70">
-              NextG
+              Neris
             </span>
           </div>
 
@@ -105,15 +105,17 @@ function AppContent() {
         </header>
 
         <TabsContent
+          forceMount
           value="translate"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
-          <TranslatePage />
+          <TranslatePage isActive={activeTab === "translate"} />
         </TabsContent>
 
         <TabsContent
+          forceMount
           value="improve"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
           <Suspense fallback={<TabFallback />}>
             <ImprovePage />
@@ -121,8 +123,9 @@ function AppContent() {
         </TabsContent>
 
         <TabsContent
+          forceMount
           value="history"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
           <Suspense fallback={<TabFallback />}>
             <HistoryPage />
@@ -130,8 +133,9 @@ function AppContent() {
         </TabsContent>
 
         <TabsContent
+          forceMount
           value="settings"
-          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col"
+          className="flex-1 min-h-0 overflow-hidden m-0 data-[state=active]:flex data-[state=active]:flex-col data-[state=inactive]:hidden"
         >
           <Suspense fallback={<TabFallback />}>
             <SettingsPage />

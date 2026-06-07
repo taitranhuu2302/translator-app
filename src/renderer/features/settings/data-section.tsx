@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/ui/select";
+import { Switch } from "../../../components/ui/switch";
 import { SettingRow } from "./setting-row";
 import { useHistory } from "../history/use-history";
 import { useSettings, useUpdateSettings } from "./use-settings";
@@ -42,6 +43,16 @@ export function DataSection() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
+          <SettingRow
+            label="Track history"
+            description="Save translation and improve results to history. Disable to save disk space."
+          >
+            <Switch
+              checked={settings?.trackHistory ?? true}
+              onCheckedChange={(v) => update({ trackHistory: v })}
+            />
+          </SettingRow>
+
           <SettingRow
             label="Max history size"
             description="Older entries are automatically pruned when the limit is reached"

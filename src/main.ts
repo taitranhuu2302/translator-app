@@ -13,9 +13,15 @@ import {
   getShortcutManager,
 } from "./main/shortcuts/shortcut-manager";
 import { registerIpcHandlers } from "./main/ipc/register-ipc-handlers";
-import { runQuickTranslatePipeline } from "./main/quick-translate-flow";
+import {
+  runQuickTranslatePipeline,
+  runQuickTranslateReplacePipeline,
+} from "./main/quick-translate-flow";
+import { runVoiceTextPipeline } from "./main/voice-text-flow";
 import { shouldSuppressMainOnActivate } from "./main/activate-guard";
 import { setAppQuitting } from "./main/app-quit-state";
+import { initAutoUpdater } from "./main/updater/app-updater";
+import { applyAutoLaunchOnSystemStart } from "./main/startup/auto-launch";
 
 if (started) app.quit();
 
@@ -57,26 +63,35 @@ app.whenReady().then(() => {
   const settings = getSettingsStore();
   const s = settings.get();
   const wm = getWindowManager();
+  applyAutoLaunchOnSystemStart(s.autoLaunchOnSystemStart);
 
   wm.createMainWindow();
   wm.createQuickWindow();
+  wm.createLoadingWindow();
 
   if (usesMenuBarTray) {
     createTray();
   }
 
   // ── Shortcut handlers ────────────────────────────────────────────────────
-  const toggleApp = () => wm.toggleMain();
+  const toggleApp = () => wm.toggleMainFromShortcut();
 
   const quickTranslate = () => {
     void runQuickTranslatePipeline();
+  };
+  const quickTranslateReplace = () => {
+    void runQuickTranslateReplacePipeline();
+  };
+  const voiceText = () => {
+    void runVoiceTextPipeline();
   };
 
   // Allow tray to trigger quick translate
   appBus.on("quick-translate-trigger", quickTranslate);
 
-  registerIpcHandlers({ toggleApp, quickTranslate });
-  registerDefaultShortcuts(s, { toggleApp, quickTranslate });
+  registerIpcHandlers({ toggleApp, quickTranslate, quickTranslateReplace, voiceText });
+  registerDefaultShortcuts(s, { toggleApp, quickTranslate, quickTranslateReplace, voiceText });
+  initAutoUpdater();
 
   const startHiddenToTray = usesMenuBarTray && s.startMinimized;
   if (!startHiddenToTray) {

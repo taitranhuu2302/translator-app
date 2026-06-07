@@ -71,6 +71,16 @@ export function BehaviorSection() {
           </CardHeader>
           <CardContent>
             <SettingRow
+              label="Open on system startup"
+              description="Launch app automatically when you sign in"
+            >
+              <Switch
+                checked={settings.autoLaunchOnSystemStart}
+                onCheckedChange={(v) => update({ autoLaunchOnSystemStart: v })}
+              />
+            </SettingRow>
+            <Separator />
+            <SettingRow
               label="Start minimized to tray"
               description="Hide window on startup"
             >

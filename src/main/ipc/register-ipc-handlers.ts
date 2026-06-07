@@ -5,11 +5,14 @@ import {
   err,
   TranslationRequest,
   AppSettings,
-  DEFAULT_SETTINGS,
   ImproveRequest,
 } from "../../shared/types";
-import { getSettingsStore } from "../settings/settings-store";
+import {
+  getDefaultSettings,
+  getSettingsStore,
+} from "../settings/settings-store";
 import { getTranslationProvider } from "../translation/google-translate-provider";
+import { shouldUseGoogleTranslate } from "../translation/quick-translate-routing";
 import { runQuickTranslatePipeline } from "../quick-translate-flow";
 import { suppressMainOnActivateFor } from "../activate-guard";
 import { getWindowManager } from "../windows/window-manager";
@@ -17,7 +20,12 @@ import {
   getShortcutManager,
   registerDefaultShortcuts,
 } from "../shortcuts/shortcut-manager";
-import { runImprove, listGroqModels, listGeminiModels } from "../ai/ai-service";
+import {
+  runImprove,
+  listGroqModels,
+  listGeminiModels,
+  runAiTranslate,
+} from "../ai/ai-service";
 import {
   addHistory,
   listHistory,
@@ -28,6 +36,7 @@ import {
   ensureQuickTranslatePermissions,
   openMacPrivacySettings,
 } from "../permissions/macos-permissions";
+import { applyAutoLaunchOnSystemStart } from "../startup/auto-launch";
 
 function normalizeTranslationError(error: unknown): ReturnType<typeof err> {
   const msg = error instanceof Error ? error.message : String(error);
@@ -43,6 +52,8 @@ function normalizeTranslationError(error: unknown): ReturnType<typeof err> {
 export function registerIpcHandlers(handlers: {
   toggleApp: () => void;
   quickTranslate: () => void;
+  quickTranslateReplace: () => void;
+  voiceText: () => void;
 }): void {
   const settings = getSettingsStore();
   const provider = getTranslationProvider();
@@ -61,6 +72,9 @@ export function registerIpcHandlers(handlers: {
       if (patch.popupAlwaysOnTop !== undefined) {
         wm.setQuickAlwaysOnTop(patch.popupAlwaysOnTop);
       }
+      if (patch.autoLaunchOnSystemStart !== undefined) {
+        applyAutoLaunchOnSystemStart(patch.autoLaunchOnSystemStart);
+      }
       return ok(updated);
     } catch (error) {
       return err("UNKNOWN", String(error));
@@ -69,10 +83,13 @@ export function registerIpcHandlers(handlers: {
 
   ipcMain.handle(IPC.SETTINGS_RESET_SHORTCUTS, () => {
     try {
-      const s = settings.get();
+      const defaultSettings = getDefaultSettings();
       const resetPatch: Partial<AppSettings> = {
-        quickTranslateShortcut: DEFAULT_SETTINGS.quickTranslateShortcut,
-        toggleAppShortcut: DEFAULT_SETTINGS.toggleAppShortcut,
+        quickTranslateShortcut: defaultSettings.quickTranslateShortcut,
+        quickTranslateReplaceShortcut:
+          defaultSettings.quickTranslateReplaceShortcut,
+        toggleAppShortcut: defaultSettings.toggleAppShortcut,
+        voiceTextShortcut: defaultSettings.voiceTextShortcut,
       };
 
       // Re-register with defaults
@@ -82,16 +99,28 @@ export function registerIpcHandlers(handlers: {
         handlers.quickTranslate,
       );
       const result2 = sm.updateShortcut(
+        "quickTranslateReplace",
+        resetPatch.quickTranslateReplaceShortcut!,
+        handlers.quickTranslateReplace,
+      );
+      const result3 = sm.updateShortcut(
         "toggleApp",
         resetPatch.toggleAppShortcut!,
         handlers.toggleApp,
       );
+      const result4 = sm.updateShortcut(
+        "voiceText",
+        resetPatch.voiceTextShortcut!,
+        handlers.voiceText,
+      );
 
-      if (!result1.success || !result2.success) {
+      if (!result1.success || !result2.success || !result3.success || !result4.success) {
         return err(
           "SHORTCUT_REGISTER_FAILED",
           result1.error ??
             result2.error ??
+            result3.error ??
+            result4.error ??
             "Could not register default shortcuts",
         );
       }
@@ -112,17 +141,38 @@ export function registerIpcHandlers(handlers: {
         return err("EMPTY_TEXT", "Please enter some text to translate");
       }
       try {
+        const s = settings.get();
+        if (s.useAiTranslation) {
+          const result = await runAiTranslate(request, s, false);
+          if (s.trackHistory) {
+            await addHistory(
+              {
+                type: "translate",
+                input: request.text,
+                output: result.translation,
+                langFrom: result.source,
+                langTo: result.target,
+                provider: "ai",
+              },
+              s.maxHistoryItems,
+            );
+          }
+          return ok(result);
+        }
         const result = await provider.translate(request);
-        await addHistory(
-          {
-            type: "translate",
-            input: request.text,
-            output: result.translation,
-            langFrom: request.source,
-            langTo: request.target,
-          },
-          settings.get().maxHistoryItems,
-        );
+        if (s.trackHistory) {
+          await addHistory(
+            {
+              type: "translate",
+              input: request.text,
+              output: result.translation,
+              langFrom: result.source,
+              langTo: result.target,
+              provider: "google",
+            },
+            s.maxHistoryItems,
+          );
+        }
         return ok(result);
       } catch (error) {
         return normalizeTranslationError(error);
@@ -139,18 +189,20 @@ export function registerIpcHandlers(handlers: {
     try {
       const s = settings.get();
       const result = await runImprove(request, s);
-      await addHistory(
-        {
-          type: "improve",
-          input: request.text,
-          output: result.corrected,
-          output2: result.suggestion,
-          langFrom: "auto",
-          langTo: request.outputLang,
-          provider: `${result.provider}/${result.model}`,
-        },
-        settings.get().maxHistoryItems,
-      );
+      if (s.trackHistory) {
+        await addHistory(
+          {
+            type: "improve",
+            input: request.text,
+            output: result.corrected,
+            output2: result.suggestion,
+            langFrom: "auto",
+            langTo: request.outputLang,
+            provider: `${result.provider}/${result.model}`,
+          },
+          s.maxHistoryItems,
+        );
+      }
       return ok(result);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -203,7 +255,9 @@ export function registerIpcHandlers(handlers: {
         return err("EMPTY_TEXT", "Text is empty");
       }
       try {
-        const result = await provider.translate(request);
+        const result = shouldUseGoogleTranslate(request.text)
+          ? await getTranslationProvider().translate(request)
+          : await runAiTranslate(request, settings.get());
         return ok(result);
       } catch (error) {
         return normalizeTranslationError(error);
@@ -213,6 +267,7 @@ export function registerIpcHandlers(handlers: {
 
   ipcMain.handle(IPC.QUICK_CLOSE, () => {
     suppressMainOnActivateFor(1500);
+    wm.hideLoading();
     wm.hideQuick({ suppressMainFocus: true });
   });
 
@@ -234,14 +289,29 @@ export function registerIpcHandlers(handlers: {
       {
         key,
         value,
-      }: { key: "quickTranslateShortcut" | "toggleAppShortcut"; value: string },
+      }: {
+        key:
+          | "quickTranslateShortcut"
+          | "quickTranslateReplaceShortcut"
+          | "toggleAppShortcut"
+          | "voiceTextShortcut";
+        value: string;
+      },
     ) => {
-      const role =
-        key === "quickTranslateShortcut" ? "quickTranslate" : "toggleApp";
-      const handler =
-        role === "quickTranslate"
-          ? handlers.quickTranslate
-          : handlers.toggleApp;
+      const role = key === "quickTranslateShortcut"
+        ? "quickTranslate"
+        : key === "quickTranslateReplaceShortcut"
+          ? "quickTranslateReplace"
+          : key === "toggleAppShortcut"
+            ? "toggleApp"
+            : "voiceText";
+      const handler = role === "quickTranslate"
+        ? handlers.quickTranslate
+        : role === "quickTranslateReplace"
+          ? handlers.quickTranslateReplace
+          : role === "toggleApp"
+            ? handlers.toggleApp
+            : handlers.voiceText;
 
       const result = sm.updateShortcut(role, value, handler);
       if (!result.success) {
@@ -269,7 +339,7 @@ export function registerIpcHandlers(handlers: {
   });
 
   ipcMain.handle(IPC.APP_TOGGLE, () => {
-    wm.toggleMain();
+    wm.toggleMainFromShortcut();
   });
 
   // ── Clipboard ─────────────────────────────────────────────────────────────

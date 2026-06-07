@@ -7,9 +7,14 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Separator } from "../../../components/ui/separator";
+import { Switch } from "../../../components/ui/switch";
 import { SettingRow } from "./setting-row";
 import { useSettings, useUpdateSettings } from "./use-settings";
-import type { LanguageCode } from "../../../shared/types";
+import type {
+  LanguageCode,
+  ManualDirection,
+  TranslationMode,
+} from "../../../shared/types";
 
 export function TranslationSection() {
   const { data: settings } = useSettings();
@@ -27,11 +32,32 @@ export function TranslationSection() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <SettingRow
-            label="Manual direction"
-            description="Default direction in the translate view"
+            label="Translate page mode"
+            description="Default mode when opening Translate page."
           >
             <div className="flex gap-1.5">
-              {(["vi-en", "en-vi"] as const).map((d) => (
+              {(["manual", "auto"] as TranslationMode[]).map((mode) => (
+                <Button
+                  key={mode}
+                  size="sm"
+                  variant={
+                    settings.translationMode === mode ? "default" : "outline"
+                  }
+                  className="h-7 text-xs"
+                  onClick={() => update({ translationMode: mode })}
+                >
+                  {mode === "manual" ? "Manual" : "Auto Detect"}
+                </Button>
+              ))}
+            </div>
+          </SettingRow>
+          <Separator />
+          <SettingRow
+            label="Translate page direction"
+            description="Default manual direction in Translate page (you can switch to Auto Detect in the page)."
+          >
+            <div className="flex gap-1.5">
+              {(["vi-en", "en-vi"] as ManualDirection[]).map((d) => (
                 <Button
                   key={d}
                   size="sm"
@@ -49,7 +75,7 @@ export function TranslationSection() {
           <Separator />
           <SettingRow
             label="Quick translate target"
-            description="Target language for the global shortcut"
+            description="Target language for quick translate popup"
           >
             <div className="flex gap-1.5">
               {(["vi", "en"] as LanguageCode[]).map((lang) => (
@@ -63,6 +89,29 @@ export function TranslationSection() {
                   }
                   className="h-7 text-xs"
                   onClick={() => update({ quickTargetLanguage: lang })}
+                >
+                  {lang === "vi" ? "Vietnamese" : "English"}
+                </Button>
+              ))}
+            </div>
+          </SettingRow>
+          <Separator />
+          <SettingRow
+            label="Quick replace target"
+            description="Target language for translate-and-replace shortcut"
+          >
+            <div className="flex gap-1.5">
+              {(["vi", "en"] as LanguageCode[]).map((lang) => (
+                <Button
+                  key={lang}
+                  size="sm"
+                  variant={
+                    settings.quickReplaceTargetLanguage === lang
+                      ? "default"
+                      : "outline"
+                  }
+                  className="h-7 text-xs"
+                  onClick={() => update({ quickReplaceTargetLanguage: lang })}
                 >
                   {lang === "vi" ? "Vietnamese" : "English"}
                 </Button>
@@ -92,6 +141,28 @@ export function TranslationSection() {
           </SettingRow>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">AI Translation</CardTitle>
+          <CardDescription className="text-xs">
+            Use AI (Groq or Gemini) instead of Google Translate for the main
+            Translate tab. Requires a configured API key in Settings → AI.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <SettingRow
+            label="Enable AI Translation"
+            description="When enabled, the Translate tab uses AI for translation. When disabled, Google Translate is used."
+          >
+            <Switch
+              checked={settings.useAiTranslation}
+              onCheckedChange={(v) => update({ useAiTranslation: v })}
+            />
+          </SettingRow>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
