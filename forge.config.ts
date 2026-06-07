@@ -21,11 +21,6 @@ const config: ForgeConfig = {
     icon: "assets/logo",
     extraResource: ["assets"],
     appBundleId: APP_BUNDLE_ID,
-    osxSign: {
-      hardenedRuntime: true,
-      entitlements: "entitlements.plist",
-      "entitlements-inherit": "entitlements.plist",
-    },
     ...(APPLE_ID && APPLE_APP_SPECIFIC_PASSWORD && APPLE_TEAM_ID
       ? {
           osxNotarize: {
