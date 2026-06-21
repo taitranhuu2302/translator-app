@@ -36,15 +36,13 @@ export const bridge = {
   },
 
   translate: {
-    manual: (
-      _request: TranslationRequest,
-    ): Promise<Result<TranslationResult>> =>
-      Promise.reject(new Error("not implemented in Tauri yet")),
+    manual: (request: TranslationRequest): Promise<Result<TranslationResult>> =>
+      invoke<Result<TranslationResult>>("translate_manual", { request }),
   },
 
   improve: {
-    run: (_request: ImproveRequest): Promise<Result<ImproveResult>> =>
-      Promise.reject(new Error("not implemented in Tauri yet")),
+    run: (request: ImproveRequest): Promise<Result<ImproveResult>> =>
+      invoke<Result<ImproveResult>>("improve_run", { request }),
   },
 
   history: {
@@ -58,10 +56,10 @@ export const bridge = {
   },
 
   models: {
-    listGroq: (_apiKey: string): Promise<AiModelOption[]> =>
-      Promise.resolve([]),
-    listGemini: (_apiKey: string): Promise<AiModelOption[]> =>
-      Promise.resolve([]),
+    listGroq: (apiKey: string): Promise<AiModelOption[]> =>
+      invoke<AiModelOption[]>("models_list_groq", { apiKey }),
+    listGemini: (apiKey: string): Promise<AiModelOption[]> =>
+      invoke<AiModelOption[]>("models_list_gemini", { apiKey }),
   },
 
   quick: {

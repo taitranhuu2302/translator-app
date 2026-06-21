@@ -163,3 +163,91 @@ pub struct HistoryListOpts {
     #[serde(rename = "type")]
     pub filter_type: Option<String>,
 }
+
+// ── Translation types ──
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationRequest {
+    pub source: String,
+    pub target: String,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationResult {
+    pub translation: String,
+    pub source_text: String,
+    pub source: String,
+    pub target: String,
+    pub details: Option<TranslationDetails>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationDetails {
+    pub pronunciation: Option<String>,
+    pub detected_source: Option<String>,
+    pub confidence: Option<f64>,
+    pub corrected_text: Option<String>,
+    pub alternatives: Vec<String>,
+    pub lexical_groups: Vec<TranslationLexicalGroup>,
+    pub definition_groups: Vec<TranslationDefinitionGroup>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationLexicalGroup {
+    pub part_of_speech: String,
+    pub terms: Vec<String>,
+    pub base: String,
+    pub entries: Vec<TranslationTermMeaning>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationTermMeaning {
+    pub term: String,
+    pub meanings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationDefinitionGroup {
+    pub part_of_speech: String,
+    pub base: String,
+    pub items: Vec<TranslationDefinitionItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslationDefinitionItem {
+    pub definition: String,
+    pub example: Option<String>,
+}
+
+// ── AI types ──
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiModelOption {
+    pub id: String,
+    pub label: String,
+    pub provider: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImproveRequest {
+    pub text: String,
+    pub output_lang: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImproveResult {
+    pub corrected: String,
+    pub suggestion: String,
+    pub provider: String,
+    pub model: String,
+}

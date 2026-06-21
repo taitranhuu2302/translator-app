@@ -1,4 +1,5 @@
 mod commands;
+mod services;
 mod stores;
 mod types;
 
@@ -34,6 +35,10 @@ pub fn run() {
             commands::history::history_delete,
             commands::history::history_clear,
             commands::clipboard::clipboard_write,
+            commands::translate::translate_manual,
+            commands::improve::improve_run,
+            commands::models::models_list_groq,
+            commands::models::models_list_gemini,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
