@@ -1,20 +1,50 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-scaffold",
-  "version": "0.1.0",
-  "identifier": "com.taitran.tauri-scaffold",
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
+  "productName": "Neris Translator",
+  "version": "2.0.0",
+  "identifier": "com.neris.translator",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
   },
   "app": {
     "windows": [
       {
-        "title": "tauri-scaffold",
+        "label": "main",
+        "title": "Neris Translator",
+        "url": "index.html",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "minWidth": 600,
+        "minHeight": 400,
+        "resizable": true,
+        "center": true,
+        "focus": true
+      },
+      {
+        "label": "quick",
+        "title": "Quick Translate",
+        "url": "index-quick.html",
+        "width": 420,
+        "height": 250,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "focus": true,
+        "visible": false,
+        "center": true
+      },
+      {
+        "label": "loading",
+        "title": "",
+        "url": "index-loading.html",
+        "width": 380,
+        "height": 180,
+        "decorations": false,
+        "visible": false,
+        "focus": false,
+        "closable": false
       }
     ],
     "security": {

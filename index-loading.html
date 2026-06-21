@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+      content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        connect-src 'self' ipc: tauri://localhost http://localhost:*;
+        img-src 'self' data: asset: tauri://localhost;
+        font-src 'self' data:;
+        frame-src 'self' tauri://localhost;
+      "
     />
     <title>Neris Translator</title>
   </head>
