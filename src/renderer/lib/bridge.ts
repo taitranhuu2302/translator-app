@@ -69,7 +69,7 @@ export const bridge = {
       _request: TranslationRequest,
     ): Promise<Result<TranslationResult>> =>
       Promise.reject(new Error("not implemented")),
-    close: (): Promise<void> => Promise.resolve(),
+    close: (): Promise<void> => invoke<void>("quick_close"),
     onLoading: (_cb: () => void): UnsubscribeFn => noop(),
     onShow: (
       _cb: (payload: QuickTranslatePayload) => void,
@@ -85,19 +85,22 @@ export const bridge = {
   },
 
   shortcuts: {
-    validate: (_accelerator: string): Promise<Result<void>> =>
-      Promise.reject(new Error("not implemented")),
+    validate: (accelerator: string): Promise<Result<void>> =>
+      invoke<Result<void>>("shortcut_validate", { accelerator }),
     update: (
-      _key: string,
-      _value: string,
+      key: string,
+      value: string,
     ): Promise<Result<AppSettings>> =>
-      Promise.reject(new Error("not implemented")),
+      invoke<Result<AppSettings>>("shortcut_update", { key, value }),
   },
 
   app: {
-    openSettings: (): Promise<void> => Promise.resolve(),
-    openFull: (): Promise<void> => Promise.resolve(),
-    toggle: (): Promise<void> => Promise.resolve(),
+    openSettings: (): Promise<void> =>
+      invoke<void>("app_open_settings"),
+    openFull: (): Promise<void> =>
+      invoke<void>("app_open_full"),
+    toggle: (): Promise<void> =>
+      invoke<void>("app_toggle"),
     onNavigate: (_cb: (route: string) => void): UnsubscribeFn => noop(),
   },
 
