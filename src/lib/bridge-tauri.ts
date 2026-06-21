@@ -4,7 +4,7 @@ import type {
   HistoryItem,
   HistoryItemType,
   Result,
-} from "../../shared/types";
+} from "@/shared/types";
 
 export const bridge = {
   settings: {

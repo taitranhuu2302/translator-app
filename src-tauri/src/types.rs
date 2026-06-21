@@ -61,6 +61,7 @@ impl<T: Serialize> Result<T> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub version: i32,
     pub translation_mode: String,
@@ -126,6 +127,7 @@ impl AppSettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HistoryItem {
     pub id: i64,
     #[serde(rename = "type")]
@@ -146,6 +148,7 @@ pub(crate) struct HistoryData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct QuickTranslatePayload {
     pub original: String,
     pub translated: String,
@@ -154,6 +157,7 @@ pub struct QuickTranslatePayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HistoryListOpts {
     pub limit: Option<i32>,
     #[serde(rename = "type")]

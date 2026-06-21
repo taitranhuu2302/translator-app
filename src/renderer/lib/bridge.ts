@@ -1,88 +1,124 @@
-import type { ElectronAPI } from "../../preload";
+import { invoke } from "@tauri-apps/api/core";
+import type {
+  AppSettings,
+  HistoryItem,
+  HistoryItemType,
+  TranslationRequest,
+  TranslationResult,
+  ImproveRequest,
+  ImproveResult,
+  AiModelOption,
+  QuickTranslatePayload,
+  Result,
+} from "../../shared/types";
 
 type UnsubscribeFn = () => void;
 
-function getPlatform(): string {
-  if (typeof navigator !== "undefined") {
-    return navigator.platform.toLowerCase().includes("mac") ? "darwin" : "win32";
-  }
-  return "darwin";
+function getPlatform(): "darwin" | "win32" {
+  return navigator.platform.toLowerCase().includes("mac") ? "darwin" : "win32";
 }
 
-function createTauriBridge(): ElectronAPI {
-  const invoke = (cmd: string, args?: Record<string, unknown>) =>
-    import("@tauri-apps/api/core").then((m) => m.invoke(cmd, args));
-
-  const noopSubscribe: () => UnsubscribeFn = () => () => {};
-
-  return {
-    runtime: { platform: getPlatform() },
-    settings: {
-      get: () => invoke("settings_get"),
-      update: (patch: any) => invoke("settings_update", { patch }),
-      resetShortcuts: () => invoke("settings_reset_shortcuts"),
-    },
-    translate: {
-      manual: () => Promise.reject(new Error("not implemented in Tauri yet")),
-    },
-    improve: {
-      run: () => Promise.reject(new Error("not implemented in Tauri yet")),
-    },
-    history: {
-      list: (opts?: any) => invoke("history_list", { opts }),
-      delete: (id: number) => invoke("history_delete", { id }),
-      clear: () => invoke("history_clear"),
-    },
-    models: {
-      listGroq: () => Promise.resolve([] as any),
-      listGemini: () => Promise.resolve([] as any),
-    },
-    quick: {
-      translateNow: () => Promise.reject(new Error("not implemented")),
-      retranslate: () => Promise.reject(new Error("not implemented")),
-      close: () => Promise.resolve(),
-      onLoading: noopSubscribe,
-      onShow: noopSubscribe as any,
-      onError: noopSubscribe as any,
-    },
-    voice: {
-      onSpeak: noopSubscribe as any,
-      onError: noopSubscribe as any,
-    },
-    shortcuts: {
-      validate: () => Promise.reject(new Error("not implemented")),
-      update: () => Promise.reject(new Error("not implemented")),
-    },
-    app: {
-      openSettings: () => Promise.resolve(),
-      openFull: () => Promise.resolve(),
-      toggle: () => Promise.resolve(),
-      onNavigate: noopSubscribe as any,
-    },
-    clipboard: {
-      writeText: (text: string) => invoke("clipboard_write", { text }),
-    },
-    macos: {
-      requestQuickPermissions: () =>
-        Promise.resolve({
-          ok: false as const,
-          message: "not implemented",
-          missing: "accessibility" as const,
-        }),
-      openPrivacySettings: () => Promise.resolve(),
-    },
-  };
+function noop(): UnsubscribeFn {
+  return () => {};
 }
 
-// When running in Electron, use the preload-injected API.
-// In Tauri, fall back to a bridge that calls invoke().
-const electronApi =
-  typeof window !== "undefined" ? (window as any).electronAPI : undefined;
+export const bridge = {
+  runtime: {
+    platform: getPlatform(),
+  },
 
-export const bridge: ElectronAPI = electronApi ?? createTauriBridge();
+  settings: {
+    get: (): Promise<AppSettings> => invoke<AppSettings>("settings_get"),
+    update: (patch: Partial<AppSettings>): Promise<Result<AppSettings>> =>
+      invoke<Result<AppSettings>>("settings_update", { patch }),
+    resetShortcuts: (): Promise<Result<AppSettings>> =>
+      invoke<Result<AppSettings>>("settings_reset_shortcuts"),
+  },
 
-declare global {
-  interface Window {
-    electronAPI?: ElectronAPI;
-  }
-}
+  translate: {
+    manual: (
+      _request: TranslationRequest,
+    ): Promise<Result<TranslationResult>> =>
+      Promise.reject(new Error("not implemented in Tauri yet")),
+  },
+
+  improve: {
+    run: (_request: ImproveRequest): Promise<Result<ImproveResult>> =>
+      Promise.reject(new Error("not implemented in Tauri yet")),
+  },
+
+  history: {
+    list: (
+      opts?: { limit?: number; type?: HistoryItemType },
+    ): Promise<HistoryItem[]> =>
+      invoke<HistoryItem[]>("history_list", { opts }),
+    delete: (id: number): Promise<void> =>
+      invoke<void>("history_delete", { id }),
+    clear: (): Promise<void> => invoke<void>("history_clear"),
+  },
+
+  models: {
+    listGroq: (_apiKey: string): Promise<AiModelOption[]> =>
+      Promise.resolve([]),
+    listGemini: (_apiKey: string): Promise<AiModelOption[]> =>
+      Promise.resolve([]),
+  },
+
+  quick: {
+    translateNow: (): Promise<Result<void>> =>
+      Promise.reject(new Error("not implemented")),
+    retranslate: (
+      _request: TranslationRequest,
+    ): Promise<Result<TranslationResult>> =>
+      Promise.reject(new Error("not implemented")),
+    close: (): Promise<void> => Promise.resolve(),
+    onLoading: (_cb: () => void): UnsubscribeFn => noop(),
+    onShow: (
+      _cb: (payload: QuickTranslatePayload) => void,
+    ): UnsubscribeFn => noop(),
+    onError: (_cb: (message: string) => void): UnsubscribeFn => noop(),
+  },
+
+  voice: {
+    onSpeak: (
+      _cb: (payload: { text: string }) => void,
+    ): UnsubscribeFn => noop(),
+    onError: (_cb: (message: string) => void): UnsubscribeFn => noop(),
+  },
+
+  shortcuts: {
+    validate: (_accelerator: string): Promise<Result<void>> =>
+      Promise.reject(new Error("not implemented")),
+    update: (
+      _key: string,
+      _value: string,
+    ): Promise<Result<AppSettings>> =>
+      Promise.reject(new Error("not implemented")),
+  },
+
+  app: {
+    openSettings: (): Promise<void> => Promise.resolve(),
+    openFull: (): Promise<void> => Promise.resolve(),
+    toggle: (): Promise<void> => Promise.resolve(),
+    onNavigate: (_cb: (route: string) => void): UnsubscribeFn => noop(),
+  },
+
+  clipboard: {
+    writeText: (text: string): Promise<void> =>
+      invoke<void>("clipboard_write", { text }),
+  },
+
+  macos: {
+    requestQuickPermissions: (): Promise<
+      | { ok: true }
+      | { ok: false; message: string; missing: "accessibility" | "automation" }
+    > =>
+      Promise.resolve({
+        ok: false as const,
+        message: "not implemented",
+        missing: "accessibility" as const,
+      }),
+    openPrivacySettings: (_pane: string): Promise<void> =>
+      Promise.resolve(),
+  },
+};
