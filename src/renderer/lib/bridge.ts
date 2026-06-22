@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   AppSettings,
   HistoryItem,
@@ -12,13 +13,11 @@ import type {
   Result,
 } from "../../shared/types";
 
-type UnsubscribeFn = () => void;
-
 function getPlatform(): "darwin" | "win32" {
   return navigator.platform.toLowerCase().includes("mac") ? "darwin" : "win32";
 }
 
-function noop(): UnsubscribeFn {
+function noop(): UnlistenFn {
   return () => {};
 }
 
@@ -64,24 +63,42 @@ export const bridge = {
 
   quick: {
     translateNow: (): Promise<Result<void>> =>
-      Promise.reject(new Error("not implemented")),
+      invoke<Result<void>>("quick_translate_now"),
     retranslate: (
-      _request: TranslationRequest,
+      request: TranslationRequest,
     ): Promise<Result<TranslationResult>> =>
-      Promise.reject(new Error("not implemented")),
+      invoke<Result<TranslationResult>>("quick_retranslate", { request }),
     close: (): Promise<void> => invoke<void>("quick_close"),
-    onLoading: (_cb: () => void): UnsubscribeFn => noop(),
-    onShow: (
-      _cb: (payload: QuickTranslatePayload) => void,
-    ): UnsubscribeFn => noop(),
-    onError: (_cb: (message: string) => void): UnsubscribeFn => noop(),
+    onLoading: (cb: () => void): UnlistenFn => noop(),
+    onShow: (cb: (payload: QuickTranslatePayload) => void): UnlistenFn => {
+      const unlisten = listen<QuickTranslatePayload>("quick:show", (event) => {
+        cb(event.payload);
+      });
+      return () => { unlisten.then((f) => f()); };
+    },
+    onError: (cb: (message: string) => void): UnlistenFn => {
+      const unlisten = listen<string>("quick:error", (event) => {
+        cb(event.payload);
+      });
+      return () => { unlisten.then((f) => f()); };
+    },
   },
 
   voice: {
     onSpeak: (
-      _cb: (payload: { text: string }) => void,
-    ): UnsubscribeFn => noop(),
-    onError: (_cb: (message: string) => void): UnsubscribeFn => noop(),
+      cb: (payload: { text: string }) => void,
+    ): UnlistenFn => {
+      const unlisten = listen<{ text: string }>("voice:speak", (event) => {
+        cb(event.payload);
+      });
+      return () => { unlisten.then((f) => f()); };
+    },
+    onError: (cb: (message: string) => void): UnlistenFn => {
+      const unlisten = listen<string>("voice:error", (event) => {
+        cb(event.payload);
+      });
+      return () => { unlisten.then((f) => f()); };
+    },
   },
 
   shortcuts: {
@@ -101,7 +118,12 @@ export const bridge = {
       invoke<void>("app_open_full"),
     toggle: (): Promise<void> =>
       invoke<void>("app_toggle"),
-    onNavigate: (_cb: (route: string) => void): UnsubscribeFn => noop(),
+    onNavigate: (cb: (route: string) => void): UnlistenFn => {
+      const unlisten = listen<string>("app:navigate", (event) => {
+        cb(event.payload);
+      });
+      return () => { unlisten.then((f) => f()); };
+    },
   },
 
   clipboard: {
@@ -114,12 +136,8 @@ export const bridge = {
       | { ok: true }
       | { ok: false; message: string; missing: "accessibility" | "automation" }
     > =>
-      Promise.resolve({
-        ok: false as const,
-        message: "not implemented",
-        missing: "accessibility" as const,
-      }),
-    openPrivacySettings: (_pane: string): Promise<void> =>
-      Promise.resolve(),
+      invoke("macos_request_quick_permissions"),
+    openPrivacySettings: (pane: string): Promise<void> =>
+      invoke<void>("macos_open_privacy_settings", { kind: pane }),
   },
 };

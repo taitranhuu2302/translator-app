@@ -1,8 +1,11 @@
 pub mod clipboard;
 pub mod history;
 pub mod improve;
+pub mod macos;
 pub mod models;
+pub mod quick;
 pub mod settings;
 pub mod shortcuts;
 pub mod translate;
+pub mod voice;
 pub mod window;

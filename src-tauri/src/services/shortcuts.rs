@@ -33,7 +33,6 @@ pub fn electron_to_platform(accelerator: &str, is_macos: bool) -> Result<String,
 fn electron_key_to_code_name(key: &str) -> Result<String, String> {
     let upper = key.to_uppercase();
 
-    // Single letter A-Z
     if upper.len() == 1 {
         let c = upper.chars().next().unwrap();
         if c.is_ascii_alphabetic() {
@@ -44,7 +43,6 @@ fn electron_key_to_code_name(key: &str) -> Result<String, String> {
         }
     }
 
-    // F1-F24
     if upper.starts_with('F') && upper.len() > 1 {
         let num: i32 = upper[1..].parse().unwrap_or(0);
         if (1..=24).contains(&num) {
@@ -113,7 +111,6 @@ pub fn validate_format(accelerator: &str) -> Result<(), String> {
 }
 
 pub fn register_default_shortcuts(app: &AppHandle, is_macos: bool) -> Result<(), String> {
-    use tauri::Manager;
     let settings_state = app.state::<crate::stores::settings::SettingsState>();
     let settings = settings_state.0.lock().unwrap().get();
 
@@ -135,13 +132,14 @@ pub fn register_shortcut(app: &AppHandle, _role: &str, accelerator: &str, is_mac
     let platform_str = electron_to_platform(accelerator, is_macos)?;
 
     let role = _role.to_string();
+    let handle = app.clone();
 
     app.global_shortcut()
-        .on_shortcut(platform_str.as_str(), move |app, _shortcut, event| {
+        .on_shortcut(platform_str.as_str(), move |app_sh, _shortcut, event| {
             if event.state == ShortcutState::Pressed {
                 match role.as_str() {
                     "toggleApp" => {
-                        if let Some(window) = app.get_webview_window("main") {
+                        if let Some(window) = app_sh.get_webview_window("main") {
                             if window.is_visible().unwrap_or(false) {
                                 let _ = window.hide();
                             } else {
@@ -151,16 +149,22 @@ pub fn register_shortcut(app: &AppHandle, _role: &str, accelerator: &str, is_mac
                         }
                     }
                     "quickTranslate" => {
-                        if let Some(window) = app.get_webview_window("quick") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
+                        let h = app_sh.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let _ = crate::commands::quick::quick_translate_now(h).await;
+                        });
                     }
                     "quickTranslateReplace" => {
-                        // Will be implemented in Phase 4
+                        let h = app_sh.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let _ = crate::commands::quick::quick_translate_replace(h).await;
+                        });
                     }
                     "voiceText" => {
-                        // Will be implemented in Phase 4
+                        let h = app_sh.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let _ = crate::commands::voice::voice_text_pipeline(h).await;
+                        });
                     }
                     _ => {}
                 }
@@ -178,3 +182,4 @@ pub fn unregister_shortcut(app: &AppHandle, accelerator: &str, is_macos: bool) -
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+

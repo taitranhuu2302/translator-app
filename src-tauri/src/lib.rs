@@ -5,6 +5,7 @@ mod types;
 
 use std::sync::Mutex;
 use tauri::Manager;
+use tauri_plugin_global_shortcut::ShortcutState;
 
 use stores::history::HistoryStore;
 use stores::settings::SettingsStore;
@@ -51,6 +52,12 @@ pub fn run() {
             commands::window::quick_close,
             commands::shortcuts::shortcut_validate,
             commands::shortcuts::shortcut_update,
+            commands::quick::quick_translate_now,
+            commands::quick::quick_translate_replace,
+            commands::quick::quick_retranslate,
+            commands::voice::voice_text_pipeline,
+            commands::macos::macos_request_quick_permissions,
+            commands::macos::macos_open_privacy_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
