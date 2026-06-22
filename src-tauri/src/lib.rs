@@ -4,8 +4,10 @@ mod stores;
 mod types;
 
 use std::sync::Mutex;
+use tauri::Emitter;
 use tauri::Manager;
-use tauri_plugin_global_shortcut::ShortcutState;
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::TrayIconBuilder;
 
 use stores::history::HistoryStore;
 use stores::settings::SettingsStore;
@@ -15,6 +17,10 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![]),
+        ))
         .setup(|app| {
             let app_data_dir = app
                 .path()
@@ -31,6 +37,71 @@ pub fn run() {
             let handle = app.handle().clone();
             let is_macos = cfg!(target_os = "macos");
             let _ = services::shortcuts::register_default_shortcuts(&handle, is_macos);
+
+            // System tray (Windows/Linux only - macOS uses Dock)
+            if !is_macos {
+                let show_item = MenuItemBuilder::with_id("show", "Show/Hide").build(app)?;
+                let translate_item = MenuItemBuilder::with_id("translate", "Quick Translate").build(app)?;
+                let settings_item = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
+                let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+
+                let menu = MenuBuilder::new(app)
+                    .item(&show_item)
+                    .item(&translate_item)
+                    .item(&settings_item)
+                    .separator()
+                    .item(&quit_item)
+                    .build()?;
+
+                TrayIconBuilder::new()
+                    .icon(app.default_window_icon().unwrap().clone())
+                    .menu(&menu)
+                    .on_menu_event(move |app, event| {
+                        match event.id().as_ref() {
+                            "show" => {
+                                if let Some(w) = app.get_webview_window("main") {
+                                    if w.is_visible().unwrap_or(false) {
+                                        let _ = w.hide();
+                                    } else {
+                                        let _ = w.show();
+                                        let _ = w.set_focus();
+                                    }
+                                }
+                            }
+                            "translate" => {
+                                let h = app.clone();
+                                tauri::async_runtime::spawn(async move {
+                                    let _ = commands::quick::quick_translate_now(h).await;
+                                });
+                            }
+                            "settings" => {
+                                if let Some(w) = app.get_webview_window("main") {
+                                    let _ = w.show();
+                                    let _ = w.set_focus();
+                                }
+                                let _ = app.emit("app:navigate", "/settings");
+                            }
+                            "quit" => {
+                                app.exit(0);
+                            }
+                            _ => {}
+                        }
+                    })
+                    .build(app)?;
+            }
+
+            // macOS: hide instead of close
+            if is_macos {
+                if let Some(w) = app.get_webview_window("main") {
+                    let handle = app.handle().clone();
+                    w.on_window_event(move |event| {
+                        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                            api.prevent_close();
+                            let _ = handle.get_webview_window("main").map(|w| w.hide());
+                        }
+                    });
+                }
+            }
 
             Ok(())
         })
