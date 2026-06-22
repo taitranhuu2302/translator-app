@@ -38,8 +38,6 @@ pub async fn shortcut_update(
         );
     }
 
-    let is_macos = cfg!(target_os = "macos");
-
     // Try to register the new shortcut
     let role = match key.as_str() {
         "toggleAppShortcut" => "toggleApp",
@@ -62,12 +60,12 @@ pub async fn shortcut_update(
         };
 
         // Unregister old
-        let _ = shortcuts::unregister_shortcut(&app, &old_accelerator, is_macos);
+        let _ = shortcuts::unregister_shortcut(&app, &old_accelerator);
 
         // Register new
-        if let Err(e) = shortcuts::register_shortcut(&app, role, &value, is_macos) {
+        if let Err(e) = shortcuts::register_shortcut(&app, &value) {
             // Rollback: re-register old shortcut
-            let _ = shortcuts::register_shortcut(&app, role, &old_accelerator, is_macos);
+            let _ = shortcuts::register_shortcut(&app, &old_accelerator);
             return Result::err(crate::types::AppErrorCode::ShortcutRegisterFailed, e);
         }
 

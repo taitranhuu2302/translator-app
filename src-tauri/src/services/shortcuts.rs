@@ -1,102 +1,103 @@
 use tauri::AppHandle;
-use tauri::Manager;
-use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 
-pub fn electron_to_platform(accelerator: &str, is_macos: bool) -> Result<String, String> {
+pub fn electron_to_code_modifiers(accelerator: &str) -> Result<(Option<Modifiers>, Code), String> {
     let parts: Vec<&str> = accelerator.split('+').collect();
     if parts.is_empty() {
         return Err("SHORTCUT_INVALID: Empty accelerator".into());
     }
 
-    let key = parts[parts.len() - 1];
-    let key_name = electron_key_to_code_name(key)?;
+    let mut mods = Modifiers::empty();
+    let key_part = parts[parts.len() - 1];
 
-    let mut result_parts: Vec<String> = Vec::new();
     for i in 0..parts.len() - 1 {
         match parts[i].to_lowercase().as_str() {
             "commandorcontrol" | "cmdorctrl" => {
-                if is_macos { result_parts.push("Cmd".into()); }
-                else { result_parts.push("Ctrl".into()); }
+                #[cfg(target_os = "macos")]
+                { mods |= Modifiers::SUPER; }
+                #[cfg(not(target_os = "macos"))]
+                { mods |= Modifiers::CONTROL; }
             }
-            "command" | "cmd" | "super" | "meta" | "win" => result_parts.push("Super".into()),
-            "control" | "ctrl" => result_parts.push("Ctrl".into()),
-            "alt" | "option" => result_parts.push("Alt".into()),
-            "shift" => result_parts.push("Shift".into()),
+            "command" | "cmd" | "super" | "meta" | "win" => mods |= Modifiers::SUPER,
+            "control" | "ctrl" => mods |= Modifiers::CONTROL,
+            "alt" | "option" => mods |= Modifiers::ALT,
+            "shift" => mods |= Modifiers::SHIFT,
             other => return Err(format!("SHORTCUT_INVALID: Unknown modifier '{}'", other)),
         }
     }
-    result_parts.push(key_name);
 
-    Ok(result_parts.join("+"))
+    let code = parse_key_code(key_part)?;
+    Ok((Some(mods), code))
 }
 
-fn electron_key_to_code_name(key: &str) -> Result<String, String> {
+fn parse_key_code(key: &str) -> Result<Code, String> {
+    use Code::*;
     let upper = key.to_uppercase();
-
-    if upper.len() == 1 {
-        let c = upper.chars().next().unwrap();
-        if c.is_ascii_alphabetic() {
-            return Ok(format!("Key{}", upper));
-        }
-        if c.is_ascii_digit() {
-            return Ok(format!("Digit{}", upper));
-        }
-    }
-
-    if upper.starts_with('F') && upper.len() > 1 {
-        let num: i32 = upper[1..].parse().unwrap_or(0);
-        if (1..=24).contains(&num) {
-            return Ok(upper);
-        }
-    }
-
-    let name = match upper.as_str() {
-        "SPACE" => "Space",
-        "TAB" => "Tab",
-        "ESCAPE" | "ESC" => "Escape",
-        "ENTER" | "RETURN" => "Enter",
-        "BACKSPACE" => "Backspace",
-        "DELETE" => "Delete",
-        "HOME" => "Home",
-        "END" => "End",
-        "PAGEUP" | "PRIOR" => "PageUp",
-        "PAGEDOWN" | "NEXT" => "PageDown",
-        "INSERT" => "Insert",
-        "ARROWUP" | "UP" => "ArrowUp",
-        "ARROWDOWN" | "DOWN" => "ArrowDown",
-        "ARROWLEFT" | "LEFT" => "ArrowLeft",
-        "ARROWRIGHT" | "RIGHT" => "ArrowRight",
-        "CAPSLOCK" => "CapsLock",
-        "NUMLOCK" | "NUM_LOCK" => "NumLock",
-        "SCROLLLOCK" | "SCROLL_LOCK" => "ScrollLock",
-        "PAUSE" | "BREAK" => "Pause",
-        "PRINTSCREEN" | "PRINT" => "PrintScreen",
-        "MINUS" | "-" => "Minus",
-        "EQUAL" | "=" | "PLUS" => "Equal",
-        "COMMA" | "," => "Comma",
-        "PERIOD" | "." => "Period",
-        "SLASH" | "/" => "Slash",
-        "SEMICOLON" | ";" => "Semicolon",
-        "QUOTE" | "'" | "\"" => "Quote",
-        "BRACKETLEFT" | "[" => "BracketLeft",
-        "BRACKETRIGHT" | "]" => "BracketRight",
-        "BACKSLASH" | "\\" => "Backslash",
-        "BACKQUOTE" | "`" | "~" => "Backquote",
+    let code = match upper.as_str() {
+        "A" | "KEYA" => KeyA, "B" | "KEYB" => KeyB, "C" | "KEYC" => KeyC,
+        "D" | "KEYD" => KeyD, "E" | "KEYE" => KeyE, "F" | "KEYF" => KeyF,
+        "G" | "KEYG" => KeyG, "H" | "KEYH" => KeyH, "I" | "KEYI" => KeyI,
+        "J" | "KEYJ" => KeyJ, "K" | "KEYK" => KeyK, "L" | "KEYL" => KeyL,
+        "M" | "KEYM" => KeyM, "N" | "KEYN" => KeyN, "O" | "KEYO" => KeyO,
+        "P" | "KEYP" => KeyP, "Q" | "KEYQ" => KeyQ, "R" | "KEYR" => KeyR,
+        "S" | "KEYS" => KeyS, "T" | "KEYT" => KeyT, "U" | "KEYU" => KeyU,
+        "V" | "KEYV" => KeyV, "W" | "KEYW" => KeyW, "X" | "KEYX" => KeyX,
+        "Y" | "KEYY" => KeyY, "Z" | "KEYZ" => KeyZ,
+        "0" | "DIGIT0" => Digit0, "1" | "DIGIT1" => Digit1,
+        "2" | "DIGIT2" => Digit2, "3" | "DIGIT3" => Digit3,
+        "4" | "DIGIT4" => Digit4, "5" | "DIGIT5" => Digit5,
+        "6" | "DIGIT6" => Digit6, "7" | "DIGIT7" => Digit7,
+        "8" | "DIGIT8" => Digit8, "9" | "DIGIT9" => Digit9,
+        "F1" => F1, "F2" => F2, "F3" => F3, "F4" => F4,
+        "F5" => F5, "F6" => F6, "F7" => F7, "F8" => F8,
+        "F9" => F9, "F10" => F10, "F11" => F11, "F12" => F12,
+        "F13" => F13, "F14" => F14, "F15" => F15, "F16" => F16,
+        "F17" => F17, "F18" => F18, "F19" => F19, "F20" => F20,
+        "F21" => F21, "F22" => F22, "F23" => F23, "F24" => F24,
+        "SPACE" => Space,
+        "TAB" => Tab,
+        "ESCAPE" | "ESC" => Escape,
+        "ENTER" | "RETURN" => Enter,
+        "BACKSPACE" => Backspace,
+        "DELETE" => Delete,
+        "HOME" => Home,
+        "END" => End,
+        "PAGEUP" | "PRIOR" => PageUp,
+        "PAGEDOWN" | "NEXT" => PageDown,
+        "INSERT" => Insert,
+        "ARROWUP" | "UP" => ArrowUp,
+        "ARROWDOWN" | "DOWN" => ArrowDown,
+        "ARROWLEFT" | "LEFT" => ArrowLeft,
+        "ARROWRIGHT" | "RIGHT" => ArrowRight,
+        "CAPSLOCK" => CapsLock,
+        "NUMLOCK" | "NUM_LOCK" => NumLock,
+        "SCROLLLOCK" | "SCROLL_LOCK" => ScrollLock,
+        "PAUSE" | "BREAK" => Pause,
+        "PRINTSCREEN" | "PRINT" => PrintScreen,
+        "MINUS" | "-" => Minus,
+        "EQUAL" | "=" | "PLUS" => Equal,
+        "COMMA" | "," => Comma,
+        "PERIOD" | "." => Period,
+        "SLASH" | "/" => Slash,
+        "SEMICOLON" | ";" => Semicolon,
+        "QUOTE" | "'" => Quote,
+        "BRACKETLEFT" | "[" => BracketLeft,
+        "BRACKETRIGHT" | "]" => BracketRight,
+        "BACKSLASH" | "\\" => Backslash,
+        "BACKQUOTE" | "`" => Backquote,
         _ => return Err(format!("SHORTCUT_INVALID: Unknown key '{}'", key)),
     };
-    Ok(name.into())
+    Ok(code)
 }
 
 pub fn validate_format(accelerator: &str) -> Result<(), String> {
     if accelerator.trim().is_empty() {
         return Err("SHORTCUT_INVALID: Accelerator is empty".into());
     }
-
     let parts: Vec<&str> = accelerator.split('+').collect();
     if parts.len() < 2 {
         return Err("SHORTCUT_INVALID: Accelerator must have at least one modifier and a key (e.g. Ctrl+Q)".into());
     }
-
     for i in 0..parts.len() - 1 {
         let m = parts[i].to_lowercase();
         match m.as_str() {
@@ -106,80 +107,23 @@ pub fn validate_format(accelerator: &str) -> Result<(), String> {
             _ => return Err(format!("SHORTCUT_INVALID: Unknown modifier '{}'", parts[i])),
         }
     }
-
-    electron_key_to_code_name(parts[parts.len() - 1]).map(|_| ())
+    parse_key_code(parts[parts.len() - 1]).map(|_| ())
 }
 
-pub fn register_default_shortcuts(app: &AppHandle, is_macos: bool) -> Result<(), String> {
-    let settings_state = app.state::<crate::stores::settings::SettingsState>();
-    let settings = settings_state.0.lock().unwrap().get();
-
-    for (role, accelerator) in [
-        ("toggleApp", &settings.toggle_app_shortcut),
-        ("quickTranslate", &settings.quick_translate_shortcut),
-        ("quickTranslateReplace", &settings.quick_translate_replace_shortcut),
-        ("voiceText", &settings.voice_text_shortcut),
-    ] {
-        if !accelerator.is_empty() {
-            register_shortcut(app, role, accelerator, is_macos)?;
-        }
-    }
-
-    Ok(())
-}
-
-pub fn register_shortcut(app: &AppHandle, _role: &str, accelerator: &str, is_macos: bool) -> Result<(), String> {
-    let platform_str = electron_to_platform(accelerator, is_macos)?;
-
-    let role = _role.to_string();
-    let handle = app.clone();
-
+pub fn register_shortcut(app: &AppHandle, accelerator: &str) -> Result<(), String> {
+    let (mods, code) = electron_to_code_modifiers(accelerator)?;
+    let shortcut = Shortcut::new(mods, code);
     app.global_shortcut()
-        .on_shortcut(platform_str.as_str(), move |app_sh, _shortcut, event| {
-            if event.state == ShortcutState::Pressed {
-                match role.as_str() {
-                    "toggleApp" => {
-                        if let Some(window) = app_sh.get_webview_window("main") {
-                            if window.is_visible().unwrap_or(false) {
-                                let _ = window.hide();
-                            } else {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
-                    }
-                    "quickTranslate" => {
-                        let h = app_sh.clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = crate::commands::quick::quick_translate_now(h).await;
-                        });
-                    }
-                    "quickTranslateReplace" => {
-                        let h = app_sh.clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = crate::commands::quick::quick_translate_replace(h).await;
-                        });
-                    }
-                    "voiceText" => {
-                        let h = app_sh.clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = crate::commands::voice::voice_text_pipeline(h).await;
-                        });
-                    }
-                    _ => {}
-                }
-            }
-        })
+        .register(shortcut)
         .map_err(|e| format!("SHORTCUT_REGISTER_FAILED: {}", e))?;
-
     Ok(())
 }
 
-pub fn unregister_shortcut(app: &AppHandle, accelerator: &str, is_macos: bool) -> Result<(), String> {
-    let platform_str = electron_to_platform(accelerator, is_macos)?;
+pub fn unregister_shortcut(app: &AppHandle, accelerator: &str) -> Result<(), String> {
+    let (mods, code) = electron_to_code_modifiers(accelerator)?;
+    let shortcut = Shortcut::new(mods, code);
     app.global_shortcut()
-        .unregister(platform_str.as_str())
+        .unregister(shortcut)
         .map_err(|e| e.to_string())?;
     Ok(())
 }
-

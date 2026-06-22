@@ -8,6 +8,7 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 use stores::history::HistoryStore;
 use stores::settings::SettingsStore;
@@ -16,7 +17,51 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_global_shortcut::Builder::new()
+            .with_handler(move |app, shortcut, event| {
+                if event.state != ShortcutState::Pressed {
+                    return;
+                }
+                let settings_state = app.state::<stores::settings::SettingsState>();
+                let settings = settings_state.0.lock().unwrap().get();
+
+                let shortcut_key = (shortcut.mods.bits(), shortcut.key as u32);
+
+                let check = |acc: &str| {
+                    if let Ok((mods, code)) = services::shortcuts::electron_to_code_modifiers(acc) {
+                        (mods.map(|m| m.bits()).unwrap_or(0), code as u32) == shortcut_key
+                    } else {
+                        false
+                    }
+                };
+
+                if check(&settings.toggle_app_shortcut) {
+                    if let Some(window) = app.get_webview_window("main") {
+                        if window.is_visible().unwrap_or(false) {
+                            let _ = window.hide();
+                        } else {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                } else if check(&settings.quick_translate_shortcut) {
+                    let h = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let _ = commands::quick::quick_translate_now(h).await;
+                    });
+                } else if check(&settings.quick_translate_replace_shortcut) {
+                    let h = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let _ = commands::quick::quick_translate_replace(h).await;
+                    });
+                } else if check(&settings.voice_text_shortcut) {
+                    let h = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        let _ = commands::voice::voice_text_pipeline(h).await;
+                    });
+                }
+            })
+            .build())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec![]),
@@ -34,12 +79,31 @@ pub fn run() {
             app.manage(stores::history::HistoryState(Mutex::new(history_store)));
 
             // Register global shortcuts from settings
-            let handle = app.handle().clone();
-            let is_macos = cfg!(target_os = "macos");
-            let _ = services::shortcuts::register_default_shortcuts(&handle, is_macos);
+            let settings_state = app.state::<stores::settings::SettingsState>();
+            let settings = settings_state.0.lock().unwrap().get();
+            for acc in [
+                &settings.toggle_app_shortcut,
+                &settings.quick_translate_shortcut,
+                &settings.quick_translate_replace_shortcut,
+                &settings.voice_text_shortcut,
+            ] {
+                if !acc.is_empty() {
+                    let _ = services::shortcuts::register_shortcut(app.handle(), acc);
+                }
+            }
 
-            // System tray (Windows/Linux only - macOS uses Dock)
-            if !is_macos {
+            // System tray (Windows/Linux only)
+            if cfg!(target_os = "macos") {
+                if let Some(w) = app.get_webview_window("main") {
+                    let handle = app.handle().clone();
+                    w.on_window_event(move |event| {
+                        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                            api.prevent_close();
+                            let _ = handle.get_webview_window("main").map(|w| w.hide());
+                        }
+                    });
+                }
+            } else {
                 let show_item = MenuItemBuilder::with_id("show", "Show/Hide").build(app)?;
                 let translate_item = MenuItemBuilder::with_id("translate", "Quick Translate").build(app)?;
                 let settings_item = MenuItemBuilder::with_id("settings", "Settings").build(app)?;
@@ -81,26 +145,11 @@ pub fn run() {
                                 }
                                 let _ = app.emit("app:navigate", "/settings");
                             }
-                            "quit" => {
-                                app.exit(0);
-                            }
+                            "quit" => app.exit(0),
                             _ => {}
                         }
                     })
                     .build(app)?;
-            }
-
-            // macOS: hide instead of close
-            if is_macos {
-                if let Some(w) = app.get_webview_window("main") {
-                    let handle = app.handle().clone();
-                    w.on_window_event(move |event| {
-                        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                            api.prevent_close();
-                            let _ = handle.get_webview_window("main").map(|w| w.hide());
-                        }
-                    });
-                }
             }
 
             Ok(())
