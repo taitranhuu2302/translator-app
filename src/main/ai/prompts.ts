@@ -1,15 +1,15 @@
 import type { ImproveRequest, TranslationRequest } from "../../shared/types";
 
-function languageName(code: string): string {
-  return code === "vi" ? "Vietnamese" : "English";
+function withDirection(source: string, target: string): string {
+  const from = source === "auto" ? "auto-detected source" : source;
+  return `from ${from} to ${target}`;
 }
 
 export function buildImproveSystemPrompt(outputLang: string): string {
-  const lang = languageName(outputLang);
   return (
     `You are a professional writing assistant. The user provides a sentence.\n` +
     `Your task: analyze and improve it, then output ONLY a valid JSON object with this exact structure:\n` +
-    `{"corrected": "the corrected version in ${lang}", "suggestion": "a more elegant alternative in ${lang}"}\n` +
+    `{"corrected": "the corrected version in ${outputLang}", "suggestion": "a more elegant alternative in ${outputLang}"}\n` +
     `Rules:\n` +
     `- Output MUST be valid JSON only, no markdown code blocks, no extra text\n` +
     `- Both fields are required and must be non-empty strings`
@@ -21,16 +21,41 @@ export function buildImproveUserPrompt(req: ImproveRequest): string {
 }
 
 export function buildTranslateSystemPrompt(req: TranslationRequest): string {
-  const targetLanguage = languageName(req.target);
-  const sourceLanguage =
-    req.source === "auto" ? "the source language" : languageName(req.source);
+  const direction = withDirection(req.source, req.target);
+  const target = req.target;
+
+  const guidelines: string[] = [];
+
+  // IT & technical content — applies regardless of target
+  guidelines.push(
+    `If the text contains IT/technical content: use proper terminology naturally ` +
+      `(e.g., "deploy" → "${target === "vi" ? "triển khai" : "deploy"}, "rollback" → "rollback / khôi phục")`,
+  );
+
+  if (target === "vi") {
+    guidelines.push(
+      `Translate like a Vietnamese professional would write — use lịch sự, tự nhiên, ` +
+        `avoid word-by-word literal translation, use proper Vietnamese collocations. ` +
+        `Keep common English loanwords where natural (email, meeting, deadline, report, feedback, manager, team, update).`,
+    );
+  } else {
+    guidelines.push(
+      `Translate into natural, professional ${target} — use proper grammar and idiomatic expressions. ` +
+        `Avoid awkward phrasing that sounds like a machine translation.`,
+    );
+  }
+
+  guidelines.push(
+    "Preserve original formatting (bullet points, line breaks)",
+    "Do NOT explain or add any extra text — return the translation only",
+  );
 
   return (
-    `You are a translation engine. Translate the user's text from ${sourceLanguage} into ${targetLanguage}.\n` +
-    `Rules:\n` +
-    `- Return only the translated text\n` +
-    `- Do not explain anything\n` +
-    `- Preserve the original meaning, tone, and formatting where possible`
+    `You are a professional translator for an office/IT workplace.\n` +
+    `Translate ${direction}. Output ONLY the translated text, no explanations.\n` +
+    `\n` +
+    `Guidelines:\n` +
+    guidelines.map((g) => `- ${g}`).join("\n")
   );
 }
 
